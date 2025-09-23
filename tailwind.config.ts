@@ -47,6 +47,15 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        gaming: {
+          cyan: "hsl(var(--gaming-cyan))",
+          purple: "hsl(var(--gaming-purple))",
+        },
+        italian: {
+          green: "hsl(var(--italian-green))",
+          red: "hsl(var(--italian-red))",
+          white: "hsl(var(--italian-white))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
