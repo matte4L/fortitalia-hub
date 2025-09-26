@@ -91,6 +91,22 @@
         </div>
     </footer>
 
+    <!-- Modal per notizie estese -->
+    <div id="newsModal" class="modal" onclick="closeNewsModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="modal-close" onclick="closeNewsModal()">&times;</span>
+            <div class="modal-header">
+                <img id="modalImage" alt="">
+                <div class="modal-header-text">
+                    <span id="modalCategory" class="news-badge"></span>
+                    <h2 id="modalTitle"></h2>
+                    <span id="modalDate" class="news-date"></span>
+                </div>
+            </div>
+            <div id="modalContent" class="modal-body"></div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
