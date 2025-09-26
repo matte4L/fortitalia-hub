@@ -10,6 +10,7 @@ interface TournamentCardProps {
   participants: string;
   status: 'upcoming' | 'live' | 'completed';
   registrationUrl?: string;
+  liveUrl?: string;
 }
 
 const TournamentCard = ({ 
@@ -19,7 +20,8 @@ const TournamentCard = ({
   prizePool, 
   participants, 
   status, 
-  registrationUrl 
+  registrationUrl,
+  liveUrl 
 }: TournamentCardProps) => {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -69,8 +71,10 @@ const TournamentCard = ({
         )}
         
         {status === 'live' && (
-          <Button variant="destructive" className="w-full glow-accent">
-            Guarda Live
+          <Button variant="destructive" className="w-full glow-accent" asChild>
+            <a href={liveUrl || 'https://www.twitch.tv/fortnite'} target="_blank" rel="noopener noreferrer">
+              Guarda Live
+            </a>
           </Button>
         )}
       </CardContent>

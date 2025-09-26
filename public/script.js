@@ -43,7 +43,8 @@ const tournamentData = [
         time: "20:00 CET",
         prizePool: "€500",
         participants: "128/128",
-        status: "live"
+        status: "live",
+        liveUrl: "https://www.twitch.tv/fortnite"
     },
     {
         name: "Pro Scrim Tournament",
@@ -91,7 +92,7 @@ function createTournamentCard(tournament) {
     if (tournament.status === 'upcoming' && tournament.registrationUrl) {
         actionButton = `<button class="btn-primary glow" onclick="window.open('${tournament.registrationUrl}', '_blank')">Registrati Ora</button>`;
     } else if (tournament.status === 'live') {
-        actionButton = `<button class="btn-secondary" style="background: var(--italian-red); color: white;">Guarda Live</button>`;
+        actionButton = `<button class="btn-secondary" onclick="window.open('${tournament.liveUrl || 'https://www.twitch.tv/fortnite'}', '_blank')" style="background: var(--italian-red); color: white;">Guarda Live</button>`;
     }
 
     return `
