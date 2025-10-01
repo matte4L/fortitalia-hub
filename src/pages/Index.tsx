@@ -1,73 +1,84 @@
+import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import NewsCard from "@/components/NewsCard";
 import TournamentCard from "@/components/TournamentCard";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-fortnite-italy.jpg";
 
-// Sample news data - easily editable
-const newsData = [
-  {
-    title: "Nuova Stagione Fortnite: Tutto quello che devi sapere",
-    excerpt: "La nuova stagione di Fortnite porta tante novità per i giocatori competitivi italiani. Scopri le nuove meccaniche e strategie...",
-    date: "2 giorni fa",
-    category: "Aggiornamenti",
-    image: "/placeholder.svg"
-  },
-  {
-    title: "Team italiano vince il campionato europeo",
-    excerpt: "Un incredibile successo per l'Italia nel panorama competitivo di Fortnite. Il team 'Gladiatori' conquista il primo posto...",
-    date: "1 settimana fa",
-    category: "Competitivo",
-    image: "/placeholder.svg"
-  },
-  {
-    title: "Guida alle migliori strategie per la Season 5",
-    excerpt: "I pro player italiani condividono i loro segreti per dominare nella nuova stagione. Tattiche avanzate e consigli esclusivi...",
-    date: "2 settimane fa",
-    category: "Guide",
-    image: "/placeholder.svg"
-  }
-];
-
-// Sample tournament data - easily editable
-const tournamentData = [
-  {
-    name: "Coppa Italia Fortnite 2024",
-    date: "15 Gen 2024",
-    time: "18:00 CET",
-    prizePool: "€10.000",
-    participants: "256/256",
-    status: "upcoming" as const,
-    registrationUrl: "#"
-  },
-  {
-    name: "Weekly Italian Cup #47",
-    date: "Oggi",
-    time: "20:00 CET",
-    prizePool: "€500",
-    participants: "128/128",
-    status: "live" as const
-  },
-  {
-    name: "Pro Scrim Tournament",
-    date: "20 Gen 2024",
-    time: "19:00 CET", 
-    prizePool: "€2.000",
-    participants: "64/64",
-    status: "upcoming" as const,
-    registrationUrl: "#"
-  },
-  {
-    name: "Italian Championship Finals",
-    date: "8 Gen 2024",
-    time: "17:00 CET",
-    prizePool: "€25.000",
-    participants: "32/32",
-    status: "completed" as const
-  }
-];
-
 const Index = () => {
+  const [newsData, setNewsData] = useState<any[]>([]);
+  const [tournamentData, setTournamentData] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Carica i dati da localStorage
+    const loadData = () => {
+      const savedNews = localStorage.getItem("news_data");
+      const savedTournaments = localStorage.getItem("tournaments_data");
+      
+      if (savedNews) {
+        setNewsData(JSON.parse(savedNews));
+      } else {
+        // Dati iniziali di esempio
+        const initialNews = [
+          {
+            id: "1",
+            title: "Nuova Stagione Fortnite: Tutto quello che devi sapere",
+            excerpt: "La nuova stagione di Fortnite porta tante novità per i giocatori competitivi italiani. Scopri le nuove meccaniche e strategie...",
+            date: "2 giorni fa",
+            category: "Aggiornamenti",
+            image: "/placeholder.svg"
+          },
+          {
+            id: "2",
+            title: "Team italiano vince il campionato europeo",
+            excerpt: "Un incredibile successo per l'Italia nel panorama competitivo di Fortnite. Il team 'Gladiatori' conquista il primo posto...",
+            date: "1 settimana fa",
+            category: "Competitivo",
+            image: "/placeholder.svg"
+          }
+        ];
+        setNewsData(initialNews);
+      }
+
+      if (savedTournaments) {
+        setTournamentData(JSON.parse(savedTournaments));
+      } else {
+        // Dati iniziali di esempio
+        const initialTournaments = [
+          {
+            id: "1",
+            name: "Coppa Italia Fortnite 2024",
+            date: "15 Gen 2024",
+            time: "18:00 CET",
+            prizePool: "€10.000",
+            participants: "256/256",
+            status: "upcoming",
+            registrationUrl: "#"
+          },
+          {
+            id: "2",
+            name: "Weekly Italian Cup #47",
+            date: "Oggi",
+            time: "20:00 CET",
+            prizePool: "€500",
+            participants: "128/128",
+            status: "live",
+            liveUrl: "https://www.twitch.tv/fortnite"
+          }
+        ];
+        setTournamentData(initialTournaments);
+      }
+    };
+
+    loadData();
+
+    // Ricarica i dati quando la finestra torna in focus (per aggiornamenti dalla dashboard)
+    const handleFocus = () => loadData();
+    window.addEventListener('focus', handleFocus);
+    
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
