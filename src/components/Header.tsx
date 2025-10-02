@@ -1,4 +1,6 @@
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { Settings } from "lucide-react";
 
 const Header = () => {
   const scrollToSection = (sectionId: string) => {
@@ -38,6 +40,11 @@ const Header = () => {
           <Button variant="outline" className="glow-primary">
             Unisciti alla Community
           </Button>
+          <Link to="/admin">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary">
+              <Settings className="w-5 h-5" />
+            </Button>
+          </Link>
         </div>
       </nav>
     </header>
