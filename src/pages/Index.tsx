@@ -2,12 +2,55 @@ import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import NewsCard from "@/components/NewsCard";
 import TournamentCard from "@/components/TournamentCard";
+import PlayerCard from "@/components/PlayerCard";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-fortnite-italy.jpg";
 
 const Index = () => {
   const [newsData, setNewsData] = useState<any[]>([]);
   const [tournamentData, setTournamentData] = useState<any[]>([]);
+  const [playersData] = useState<any[]>([
+    {
+      name: "Marco Rossi",
+      nickname: "ITA_Phantom",
+      role: "Pro Player",
+      team: "Team Italia",
+      image: "/placeholder.svg",
+      wins: 47,
+      kd: "3.8",
+      tournaments: 125
+    },
+    {
+      name: "Luca Bianchi",
+      nickname: "LegendBianchi",
+      role: "Competitivo",
+      team: "Gladiatori",
+      image: "/placeholder.svg",
+      wins: 38,
+      kd: "3.2",
+      tournaments: 98
+    },
+    {
+      name: "Sofia Romano",
+      nickname: "QueenRomano",
+      role: "Pro Player",
+      team: "Team Italia",
+      image: "/placeholder.svg",
+      wins: 52,
+      kd: "4.1",
+      tournaments: 142
+    },
+    {
+      name: "Giovanni Conti",
+      nickname: "GioKing",
+      role: "Content Creator",
+      team: "Indipendente",
+      image: "/placeholder.svg",
+      wins: 29,
+      kd: "2.9",
+      tournaments: 76
+    }
+  ]);
 
   useEffect(() => {
     // Carica i dati da localStorage
@@ -138,6 +181,32 @@ const Index = () => {
           <div className="text-center mt-12">
             <Button variant="outline" size="lg">
               Vedi Tutte le Notizie
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Top Players Section */}
+      <section id="players" className="py-20 px-4 bg-card/30">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-primary">
+              Top Player Italiani
+            </h2>
+            <p className="text-xl text-muted-foreground">
+              I migliori giocatori competitivi della scena italiana
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {playersData.map((player, index) => (
+              <PlayerCard key={index} {...player} />
+            ))}
+          </div>
+          
+          <div className="text-center mt-12">
+            <Button variant="outline" size="lg" className="glow-primary">
+              Vedi Classifica Completa
             </Button>
           </div>
         </div>
