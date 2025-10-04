@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,15 +11,20 @@ import { Trophy, Target, Users } from "lucide-react";
 
 const Predictions = () => {
   const { toast } = useToast();
+  const [totalPredictions, setTotalPredictions] = useState(0);
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     tournament: "",
     winner: "",
-    topPlayer: "",
     killLeader: "",
     predictions: ""
   });
+
+  useEffect(() => {
+    const predictions = JSON.parse(localStorage.getItem("predictions") || "[]");
+    setTotalPredictions(predictions.length);
+  }, []);
 
   const tournaments = [
     "Coppa Italia Fortnite 2024",
@@ -39,6 +44,7 @@ const Predictions = () => {
       id: Date.now()
     });
     localStorage.setItem("predictions", JSON.stringify(predictions));
+    setTotalPredictions(predictions.length);
 
     toast({
       title: "Prediction Inviata! 🎉",
@@ -51,7 +57,6 @@ const Predictions = () => {
       email: "",
       tournament: "",
       winner: "",
-      topPlayer: "",
       killLeader: "",
       predictions: ""
     });
@@ -80,7 +85,7 @@ const Predictions = () => {
             <Card className="bg-card/50 border-primary/20">
               <CardContent className="pt-6 text-center">
                 <Trophy className="w-8 h-8 text-primary mx-auto mb-2" />
-                <p className="text-2xl font-bold">245</p>
+                <p className="text-2xl font-bold">{totalPredictions}</p>
                 <p className="text-sm text-muted-foreground">Predictions Totali</p>
               </CardContent>
             </Card>
@@ -149,7 +154,7 @@ const Predictions = () => {
                   </Select>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-4">
+                <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="winner">Vincitore Previsto *</Label>
                     <Input
@@ -158,15 +163,6 @@ const Predictions = () => {
                       value={formData.winner}
                       onChange={(e) => handleChange("winner", e.target.value)}
                       required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="topPlayer">Top Player</Label>
-                    <Input
-                      id="topPlayer"
-                      placeholder="MVP del torneo"
-                      value={formData.topPlayer}
-                      onChange={(e) => handleChange("topPlayer", e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
