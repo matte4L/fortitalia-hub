@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import NewsCard from "@/components/NewsCard";
 import TournamentCard from "@/components/TournamentCard";
@@ -50,7 +51,7 @@ const Index = () => {
       kd: "2.9",
       tournaments: 76
     }
-  ]);
+  ].slice(0, 4));
 
   useEffect(() => {
     // Carica i dati da localStorage
@@ -150,12 +151,16 @@ const Index = () => {
             Notizie, tornei e tutto quello che serve per dominare!
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="glow-primary">
-              Unisciti alla Community
-            </Button>
-            <Button size="lg" variant="outline" className="glow-accent">
-              Guarda i Tornei Live
-            </Button>
+            <Link to="/predictions">
+              <Button size="lg" className="glow-primary">
+                Invia le Tue Predictions
+              </Button>
+            </Link>
+            <Link to="/tournaments">
+              <Button size="lg" variant="outline" className="glow-accent">
+                Guarda i Tornei Live
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -179,9 +184,11 @@ const Index = () => {
           </div>
           
           <div className="text-center mt-12">
-            <Button variant="outline" size="lg">
-              Vedi Tutte le Notizie
-            </Button>
+            <Link to="/news">
+              <Button variant="outline" size="lg">
+                Vedi Tutte le Notizie
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -205,9 +212,11 @@ const Index = () => {
           </div>
           
           <div className="text-center mt-12">
-            <Button variant="outline" size="lg" className="glow-primary">
-              Vedi Classifica Completa
-            </Button>
+            <Link to="/players">
+              <Button variant="outline" size="lg" className="glow-primary">
+                Vedi Classifica Completa
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -231,9 +240,11 @@ const Index = () => {
           </div>
           
           <div className="text-center mt-12">
-            <Button size="lg" className="glow-accent">
-              Vedi Calendario Completo
-            </Button>
+            <Link to="/tournaments">
+              <Button size="lg" className="glow-accent">
+                Vedi Calendario Completo
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
