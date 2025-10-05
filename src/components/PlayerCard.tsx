@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Target, Users, TrendingUp, DollarSign } from "lucide-react";
+import { TrendingUp, DollarSign } from "lucide-react";
 
 interface PlayerCardProps {
   name: string;
@@ -8,9 +8,6 @@ interface PlayerCardProps {
   role: string;
   image?: string;
   team?: string;
-  wins?: number;
-  kd?: string;
-  tournaments?: number;
   pr?: number;
   earnings?: string;
 }
@@ -21,9 +18,6 @@ const PlayerCard = ({
   role, 
   image, 
   team,
-  wins = 0,
-  kd = "0.0",
-  tournaments = 0,
   pr = 0,
   earnings = "$0"
 }: PlayerCardProps) => {
@@ -48,39 +42,17 @@ const PlayerCard = ({
         <h3 className="text-2xl font-bold text-primary">{nickname}</h3>
         <p className="text-sm text-muted-foreground">{name}</p>
       </CardHeader>
-      <CardContent className="pt-0 space-y-4">
-        <div className="grid grid-cols-3 gap-3 text-center">
-          <div className="flex flex-col items-center">
-            <Trophy className="w-4 h-4 text-primary mb-1" />
-            <span className="text-lg font-bold">{wins}</span>
-            <span className="text-xs text-muted-foreground">Vittorie</span>
+      <CardContent className="pt-0">
+        <div className="grid grid-cols-2 gap-4 text-center">
+          <div className="flex flex-col items-center p-3 bg-muted/50 rounded-lg">
+            <TrendingUp className="w-5 h-5 text-primary mb-2" />
+            <span className="text-2xl font-bold text-primary">{pr}</span>
+            <span className="text-xs text-muted-foreground font-medium">PR</span>
           </div>
-          <div className="flex flex-col items-center">
-            <Target className="w-4 h-4 text-accent mb-1" />
-            <span className="text-lg font-bold">{kd}</span>
-            <span className="text-xs text-muted-foreground">K/D</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <Users className="w-4 h-4 text-gaming-cyan mb-1" />
-            <span className="text-lg font-bold">{tournaments}</span>
-            <span className="text-xs text-muted-foreground">Tornei</span>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-primary" />
-            <div>
-              <p className="text-xs text-muted-foreground">Power Rank</p>
-              <p className="text-sm font-bold">{pr}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-accent" />
-            <div>
-              <p className="text-xs text-muted-foreground">Earnings</p>
-              <p className="text-sm font-bold">{earnings}</p>
-            </div>
+          <div className="flex flex-col items-center p-3 bg-muted/50 rounded-lg">
+            <DollarSign className="w-5 h-5 text-accent mb-2" />
+            <span className="text-2xl font-bold text-accent">{earnings}</span>
+            <span className="text-xs text-muted-foreground font-medium">Earnings</span>
           </div>
         </div>
       </CardContent>
