@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Newspaper, Trophy } from "lucide-react";
+import { LogOut, Newspaper, Trophy, Users } from "lucide-react";
 import { toast } from "sonner";
 import NewsManager from "@/components/admin/NewsManager";
 import TournamentManager from "@/components/admin/TournamentManager";
+import PlayerManager from "@/components/admin/PlayerManager";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -56,7 +57,7 @@ const AdminDashboard = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="news" className="space-y-6">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+          <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3">
             <TabsTrigger value="news" className="gap-2">
               <Newspaper className="w-4 h-4" />
               Notizie
@@ -64,6 +65,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="tournaments" className="gap-2">
               <Trophy className="w-4 h-4" />
               Tornei
+            </TabsTrigger>
+            <TabsTrigger value="players" className="gap-2">
+              <Users className="w-4 h-4" />
+              Players
             </TabsTrigger>
           </TabsList>
 
@@ -73,6 +78,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="tournaments">
             <TournamentManager />
+          </TabsContent>
+
+          <TabsContent value="players">
+            <PlayerManager />
           </TabsContent>
         </Tabs>
       </main>
