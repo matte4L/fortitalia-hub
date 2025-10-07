@@ -12,7 +12,7 @@ import {
 
 interface Prediction {
   username: string;
-  email: string;
+  twitchId: string;
   tournament: string;
   winner: string;
   killLeader: string;
@@ -52,10 +52,10 @@ const PredictionsManager = () => {
 
   const handleExport = () => {
     const csv = [
-      ["Username", "Email", "Torneo", "Vincitore Previsto", "Kill Leader", "Note", "Data"],
+      ["Username", "ID Twitch", "Torneo", "Vincitore Previsto", "Kill Leader", "Note", "Data"],
       ...predictions.map(p => [
         p.username,
-        p.email,
+        p.twitchId,
         p.tournament,
         p.winner,
         p.killLeader,
@@ -111,7 +111,7 @@ const PredictionsManager = () => {
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="font-semibold">{prediction.username}</h3>
                       <span className="text-xs text-muted-foreground">•</span>
-                      <span className="text-xs text-muted-foreground">{prediction.email}</span>
+                      <span className="text-xs text-muted-foreground">{prediction.twitchId}</span>
                     </div>
                     <div className="text-sm space-y-1">
                       <p className="text-muted-foreground">
@@ -188,8 +188,8 @@ const PredictionsManager = () => {
                 <p className="text-lg font-semibold">{selectedPrediction.username}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Email</label>
-                <p>{selectedPrediction.email}</p>
+                <label className="text-sm font-medium text-muted-foreground">ID Twitch</label>
+                <p>{selectedPrediction.twitchId}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Torneo</label>

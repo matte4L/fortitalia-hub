@@ -14,7 +14,7 @@ const Predictions = () => {
   const [totalPredictions, setTotalPredictions] = useState(0);
   const [formData, setFormData] = useState({
     username: "",
-    email: "",
+    twitchId: "",
     tournament: "",
     winner: "",
     killLeader: "",
@@ -54,7 +54,7 @@ const Predictions = () => {
     // Reset form
     setFormData({
       username: "",
-      email: "",
+      twitchId: "",
       tournament: "",
       winner: "",
       killLeader: "",
@@ -126,13 +126,13 @@ const Predictions = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email *</Label>
+                    <Label htmlFor="twitchId">ID Twitch *</Label>
                     <Input
-                      id="email"
-                      type="email"
-                      placeholder="la-tua@email.com"
-                      value={formData.email}
-                      onChange={(e) => handleChange("email", e.target.value)}
+                      id="twitchId"
+                      type="text"
+                      placeholder="Il tuo ID Twitch"
+                      value={formData.twitchId}
+                      onChange={(e) => handleChange("twitchId", e.target.value)}
                       required
                     />
                   </div>

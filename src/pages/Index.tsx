@@ -55,18 +55,18 @@ const Index = () => {
             alt="Fortnite Italia Hero" 
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-background/60"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/70 to-background/90"></div>
         </div>
         
         <div className="relative z-10 text-center max-w-4xl mx-auto px-4">
           <h1 className="text-6xl md:text-8xl font-bold mb-6">
-            <span className="gradient-gaming bg-clip-text text-transparent">
+            <span className="text-white drop-shadow-[0_0_20px_rgba(0,255,157,0.5)]">
               FORTNITE
             </span>
             <br />
-            <span className="text-primary">ITALIA</span>
+            <span className="text-primary drop-shadow-[0_0_30px_rgba(0,255,100,0.8)]">ITALIA</span>
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+          <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-2xl mx-auto drop-shadow-lg">
             Il punto di riferimento per la community competitiva italiana di Fortnite. 
             Notizie, tornei e tutto quello che serve per dominare!
           </p>
