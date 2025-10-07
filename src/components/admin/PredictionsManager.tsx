@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Target, Trash2, Eye, Download, Plus, RotateCcw, Edit } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -29,6 +30,7 @@ const PredictionsManager = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editForm, setEditForm] = useState<Prediction | null>(null);
+  const [filterTournament, setFilterTournament] = useState<string>("");
 
   useEffect(() => {
     loadPredictions();
@@ -38,6 +40,28 @@ const PredictionsManager = () => {
     const saved = localStorage.getItem("tournament_predictions");
     if (saved) {
       setPredictions(JSON.parse(saved));
+      return;
+    }
+    const legacy = localStorage.getItem("predictions");
+    if (legacy) {
+      try {
+        const legacyArr = JSON.parse(legacy);
+        const migrated = legacyArr.map((p: any) => ({
+          username: p.username || "",
+          twitchId: p.twitchId || p.email || "N/D",
+          tournament: p.tournament || "",
+          winner: p.winner || "",
+          killLeader: p.killLeader || "",
+          notes: p.predictions || p.notes || "",
+          timestamp: p.timestamp || p.date || new Date().toISOString(),
+        }));
+        localStorage.setItem("tournament_predictions", JSON.stringify(migrated));
+        setPredictions(migrated);
+      } catch (e) {
+        setPredictions([]);
+      }
+    } else {
+      setPredictions([]);
     }
   };
 
@@ -62,24 +86,56 @@ const PredictionsManager = () => {
     setIsDialogOpen(true);
   };
 
+  const handleCreateNew = () => {
+    setEditForm({
+      username: "",
+      twitchId: "",
+      tournament: "",
+      winner: "",
+      killLeader: "",
+      notes: "",
+      timestamp: "", // empty means new
+    });
+    setIsEditMode(true);
+    setIsDialogOpen(true);
+  };
+
   const handleSaveEdit = () => {
     if (editForm) {
-      const index = predictions.findIndex(p => p.timestamp === editForm.timestamp);
-      if (index !== -1) {
-        const updated = [...predictions];
-        updated[index] = editForm;
-        localStorage.setItem("tournament_predictions", JSON.stringify(updated));
-        setPredictions(updated);
-        toast.success("Prediction modificata!");
-        setIsDialogOpen(false);
-        setEditForm(null);
+      if (!editForm.username || !editForm.twitchId || !editForm.tournament || !editForm.winner) {
+        toast.error("Compila i campi obbligatori: Username, ID Twitch, Torneo, Vincitore");
+        return;
       }
+      const existsIndex = predictions.findIndex((p) => p.timestamp === editForm.timestamp && editForm.timestamp);
+      let updated = [...predictions];
+      if (existsIndex !== -1) {
+        updated[existsIndex] = editForm;
+      } else {
+        const toAdd = { ...editForm, timestamp: new Date().toISOString() };
+        updated = [toAdd, ...updated];
+      }
+      localStorage.setItem("tournament_predictions", JSON.stringify(updated));
+      setPredictions(updated);
+      toast.success("Prediction salvata!");
+      setIsDialogOpen(false);
+      setEditForm(null);
     }
+  };
+
+  const handleNewCampaign = () => {
+    const tournament = prompt("Imposta il torneo per la nuova raccolta predictions (lascia vuoto per nessuno)") || "";
+    localStorage.setItem(
+      "predictions_campaign",
+      JSON.stringify({ tournament: tournament || null, startedAt: new Date().toISOString() })
+    );
+    localStorage.setItem("tournament_predictions", JSON.stringify([]));
+    setPredictions([]);
+    setFilterTournament(tournament || "");
+    toast.success("Nuova campagna avviata e contatore resettato!");
   };
 
   const handleResetCounter = () => {
     if (confirm("Resettare il contatore delle predictions? Questo non eliminerà le predictions esistenti.")) {
-      // Non facciamo nulla perché il counter si basa sulla lunghezza dell'array
       toast.success("Il contatore riflette sempre il numero reale di predictions!");
     }
   };
@@ -91,6 +147,15 @@ const PredictionsManager = () => {
       toast.success("Tutte le predictions sono state eliminate!");
     }
   };
+
+  // Sync con invii da altre pagine/schede
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "tournament_predictions") loadPredictions();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   const handleExport = () => {
     const csv = [
@@ -126,16 +191,29 @@ const PredictionsManager = () => {
               <Target className="w-5 h-5" />
               Predictions Ricevute ({predictions.length})
             </CardTitle>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Select value={filterTournament} onValueChange={setFilterTournament}>
+                <SelectTrigger className="w-[220px]"><SelectValue placeholder="Filtro Torneo" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Tutti i Tornei</SelectItem>
+                  {Array.from(new Set(predictions.map(p => p.tournament))).map(t => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={handleCreateNew} variant="default" className="gap-2">
+                <Plus className="w-4 h-4" /> Crea Prediction
+              </Button>
+              <Button onClick={handleNewCampaign} variant="secondary" className="gap-2">
+                <RotateCcw className="w-4 h-4" /> Nuova Campagna
+              </Button>
               {predictions.length > 0 && (
                 <>
                   <Button onClick={handleExport} variant="outline" className="gap-2">
-                    <Download className="w-4 h-4" />
-                    Esporta CSV
+                    <Download className="w-4 h-4" /> Esporta CSV
                   </Button>
                   <Button onClick={handleClearAll} variant="destructive" className="gap-2">
-                    <RotateCcw className="w-4 h-4" />
-                    Resetta Tutto
+                    <Trash2 className="w-4 h-4" /> Elimina Tutto
                   </Button>
                 </>
               )}
