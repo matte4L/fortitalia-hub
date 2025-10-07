@@ -22,7 +22,7 @@ const Predictions = () => {
   });
 
   useEffect(() => {
-    const predictions = JSON.parse(localStorage.getItem("predictions") || "[]");
+    const predictions = JSON.parse(localStorage.getItem("tournament_predictions") || "[]");
     setTotalPredictions(predictions.length);
   }, []);
 
@@ -37,13 +37,13 @@ const Predictions = () => {
     e.preventDefault();
     
     // Salva le predictions in localStorage
-    const predictions = JSON.parse(localStorage.getItem("predictions") || "[]");
+    const predictions = JSON.parse(localStorage.getItem("tournament_predictions") || "[]");
     predictions.push({
       ...formData,
-      date: new Date().toISOString(),
-      id: Date.now()
+      timestamp: new Date().toISOString(),
+      notes: formData.predictions
     });
-    localStorage.setItem("predictions", JSON.stringify(predictions));
+    localStorage.setItem("tournament_predictions", JSON.stringify(predictions));
     setTotalPredictions(predictions.length);
 
     toast({
