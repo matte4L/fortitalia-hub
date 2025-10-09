@@ -8,6 +8,7 @@ import News from "./pages/News";
 import Tournaments from "./pages/Tournaments";
 import Players from "./pages/Players";
 import Predictions from "./pages/Predictions";
+import PublicPredictions from "./pages/PublicPredictions";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/tournaments" element={<Tournaments />} />
           <Route path="/players" element={<Players />} />
           <Route path="/predictions" element={<Predictions />} />
+          <Route path="/public-predictions" element={<PublicPredictions />} />
           <Route path="/admin" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

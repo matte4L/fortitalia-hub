@@ -1,45 +1,72 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Trophy, Target, Users } from "lucide-react";
+import { Trophy, Target, Users, Eye, AlertCircle } from "lucide-react";
 
 const Predictions = () => {
   const { toast } = useToast();
   const [totalPredictions, setTotalPredictions] = useState(0);
+  const [activeCampaign, setActiveCampaign] = useState<any>(null);
   const [formData, setFormData] = useState({
     username: "",
     twitchId: "",
-    tournament: "",
     winner: "",
     killLeader: "",
     predictions: ""
   });
 
   useEffect(() => {
+    loadActiveCampaign();
     const predictions = JSON.parse(localStorage.getItem("tournament_predictions") || "[]");
     setTotalPredictions(predictions.length);
   }, []);
 
-  const tournaments = [
-    "Coppa Italia Fortnite 2024",
-    "Weekly Italian Cup #47",
-    "Torneo Solo Regional",
-    "Duo Championship Italy"
-  ];
+  const loadActiveCampaign = () => {
+    const campaigns = localStorage.getItem("prediction_campaigns");
+    if (campaigns) {
+      const parsed = JSON.parse(campaigns);
+      const now = new Date();
+      const active = parsed.find((c: any) => {
+        const start = new Date(c.startDate);
+        const end = new Date(c.endDate);
+        return now >= start && now <= end;
+      });
+      setActiveCampaign(active);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Salva le predictions in localStorage
+    if (!activeCampaign) {
+      toast({
+        title: "Errore",
+        description: "Nessuna campagna attiva al momento!",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.username || !formData.twitchId || !formData.winner || !formData.killLeader) {
+      toast({
+        title: "Errore",
+        description: "Compila tutti i campi obbligatori!",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const predictions = JSON.parse(localStorage.getItem("tournament_predictions") || "[]");
     predictions.push({
       ...formData,
+      tournament: activeCampaign.tournamentName,
       timestamp: new Date().toISOString(),
       notes: formData.predictions
     });
@@ -51,11 +78,9 @@ const Predictions = () => {
       description: "Le tue previsioni sono state registrate. Buona fortuna!",
     });
 
-    // Reset form
     setFormData({
       username: "",
       twitchId: "",
-      tournament: "",
       winner: "",
       killLeader: "",
       predictions: ""
@@ -72,13 +97,43 @@ const Predictions = () => {
       
       <main className="pt-24 pb-12 px-4">
         <div className="container mx-auto max-w-4xl">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <h1 className="text-5xl md:text-6xl font-bold mb-4 text-primary">
               Predictions Tornei
             </h1>
             <p className="text-xl text-muted-foreground">
               Invia le tue previsioni e sfida la community!
             </p>
+          </div>
+
+          {!activeCampaign && (
+            <Alert className="mb-8 border-yellow-500/50 bg-yellow-500/10">
+              <AlertCircle className="h-4 w-4 text-yellow-500" />
+              <AlertDescription className="text-yellow-500">
+                Non ci sono campagne di predictions attive al momento. Torna più tardi!
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {activeCampaign && (
+            <Card className="mb-8 border-primary/50 bg-primary/5">
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <h3 className="text-2xl font-bold mb-2">{activeCampaign.tournamentName}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Campagna attiva fino al {new Date(activeCampaign.endDate).toLocaleString('it-IT')}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="flex justify-center mb-8">
+            <Link to="/public-predictions">
+              <Button variant="outline" className="gap-2">
+                <Eye className="w-4 h-4" /> Vedi Tutte le Predictions
+              </Button>
+            </Link>
           </div>
 
           <div className="grid md:grid-cols-3 gap-4 mb-8">
@@ -109,93 +164,89 @@ const Predictions = () => {
             <CardHeader>
               <CardTitle className="text-2xl">Invia la Tua Prediction</CardTitle>
               <CardDescription>
-                Compila il form con le tue previsioni per il torneo selezionato
+                {activeCampaign 
+                  ? `Compila il form con le tue previsioni per ${activeCampaign.tournamentName}`
+                  : "Nessuna campagna attiva al momento"}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-4">
+              {!activeCampaign ? (
+                <div className="text-center py-12">
+                  <Target className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    Nessuna campagna attiva. Le predictions saranno disponibili quando verrà attivata una nuova campagna.
+                  </p>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="username">Username *</Label>
+                      <Input
+                        id="username"
+                        placeholder="Il tuo nickname"
+                        value={formData.username}
+                        onChange={(e) => handleChange("username", e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="twitchId">ID Twitch *</Label>
+                      <Input
+                        id="twitchId"
+                        type="text"
+                        placeholder="Il tuo ID Twitch"
+                        value={formData.twitchId}
+                        onChange={(e) => handleChange("twitchId", e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="winner">Vincitore Previsto *</Label>
+                      <Input
+                        id="winner"
+                        placeholder="Nome team/player"
+                        value={formData.winner}
+                        onChange={(e) => handleChange("winner", e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="killLeader">Kill Leader *</Label>
+                      <Input
+                        id="killLeader"
+                        placeholder="Chi farà più kills"
+                        value={formData.killLeader}
+                        onChange={(e) => handleChange("killLeader", e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="username">Username *</Label>
-                    <Input
-                      id="username"
-                      placeholder="Il tuo nickname"
-                      value={formData.username}
-                      onChange={(e) => handleChange("username", e.target.value)}
-                      required
+                    <Label htmlFor="predictions">Note Aggiuntive</Label>
+                    <Textarea
+                      id="predictions"
+                      placeholder="Aggiungi altre previsioni o commenti..."
+                      value={formData.predictions}
+                      onChange={(e) => handleChange("predictions", e.target.value)}
+                      rows={4}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="twitchId">ID Twitch *</Label>
-                    <Input
-                      id="twitchId"
-                      type="text"
-                      placeholder="Il tuo ID Twitch"
-                      value={formData.twitchId}
-                      onChange={(e) => handleChange("twitchId", e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="tournament">Seleziona Torneo *</Label>
-                  <Select value={formData.tournament} onValueChange={(value) => handleChange("tournament", value)} required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Scegli un torneo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tournaments.map((tournament) => (
-                        <SelectItem key={tournament} value={tournament}>
-                          {tournament}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="winner">Vincitore Previsto *</Label>
-                    <Input
-                      id="winner"
-                      placeholder="Nome team/player"
-                      value={formData.winner}
-                      onChange={(e) => handleChange("winner", e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="killLeader">Kill Leader</Label>
-                    <Input
-                      id="killLeader"
-                      placeholder="Chi farà più kills"
-                      value={formData.killLeader}
-                      onChange={(e) => handleChange("killLeader", e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="predictions">Note Aggiuntive</Label>
-                  <Textarea
-                    id="predictions"
-                    placeholder="Aggiungi altre previsioni o commenti..."
-                    value={formData.predictions}
-                    onChange={(e) => handleChange("predictions", e.target.value)}
-                    rows={4}
-                  />
-                </div>
-
-                <Button type="submit" size="lg" className="w-full glow-accent">
-                  Invia Prediction
-                </Button>
-              </form>
+                  <Button type="submit" size="lg" className="w-full glow-accent">
+                    Invia Prediction
+                  </Button>
+                </form>
+              )}
             </CardContent>
           </Card>
 
           <div className="mt-8 text-center text-sm text-muted-foreground">
-            <p>Le tue predictions saranno visibili alla community dopo la revisione</p>
+            <p>Le tue predictions saranno visibili pubblicamente nella sezione Community</p>
           </div>
         </div>
       </main>
