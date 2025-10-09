@@ -41,7 +41,7 @@ const PublicPredictions = () => {
     }
   };
 
-  const filteredPredictions = filterTournament
+  const filteredPredictions = filterTournament && filterTournament !== "all"
     ? predictions.filter(p => p.tournament === filterTournament)
     : predictions;
 
@@ -69,7 +69,7 @@ const PublicPredictions = () => {
                   <SelectValue placeholder="Filtra per torneo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tutti i Tornei</SelectItem>
+                  <SelectItem value="all">Tutti i Tornei</SelectItem>
                   {tournaments.map(t => (
                     <SelectItem key={t} value={t}>{t}</SelectItem>
                   ))}

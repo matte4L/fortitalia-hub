@@ -250,7 +250,7 @@ const PredictionsManager = () => {
     });
   };
 
-  const filteredPredictions = filterTournament 
+  const filteredPredictions = filterTournament && filterTournament !== "all"
     ? predictions.filter(p => p.tournament === filterTournament)
     : predictions;
 
@@ -337,7 +337,7 @@ const PredictionsManager = () => {
               <Select value={filterTournament} onValueChange={setFilterTournament}>
                 <SelectTrigger className="w-[220px]"><SelectValue placeholder="Filtro Torneo" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tutti i Tornei</SelectItem>
+                  <SelectItem value="all">Tutti i Tornei</SelectItem>
                   {Array.from(new Set(predictions.map(p => p.tournament))).map(t => (
                     <SelectItem key={t} value={t}>{t}</SelectItem>
                   ))}
