@@ -14,13 +14,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+interface PredictionField {
+  id: string;
+  label: string;
+  type: 'text' | 'textarea' | 'select';
+  options?: string[];
+  required: boolean;
+}
+
 interface Prediction {
   username: string;
   twitchId: string;
   tournament: string;
-  winner: string;
-  killLeader: string;
-  notes?: string;
+  responses: { [fieldId: string]: string };
   timestamp: string;
 }
 
@@ -30,6 +36,7 @@ interface PredictionCampaign {
   tournamentName: string;
   startDate: string;
   endDate: string;
+  fields: PredictionField[];
   createdAt: string;
 }
 
@@ -47,6 +54,13 @@ const PredictionsManager = () => {
     tournamentId: "",
     startDate: "",
     endDate: ""
+  });
+  const [customFields, setCustomFields] = useState<PredictionField[]>([]);
+  const [newField, setNewField] = useState<{ label: string; type: 'text' | 'textarea' | 'select'; required: boolean; options: string }>({ 
+    label: "", 
+    type: "text", 
+    required: true, 
+    options: "" 
   });
 
   useEffect(() => {
@@ -75,6 +89,7 @@ const PredictionsManager = () => {
       setPredictions(JSON.parse(saved));
       return;
     }
+    // Legacy migration - convert old format to new format
     const legacy = localStorage.getItem("predictions");
     if (legacy) {
       try {
@@ -83,9 +98,11 @@ const PredictionsManager = () => {
           username: p.username || "",
           twitchId: p.twitchId || p.email || "N/D",
           tournament: p.tournament || "",
-          winner: p.winner || "",
-          killLeader: p.killLeader || "",
-          notes: p.predictions || p.notes || "",
+          responses: {
+            "Vincitore": p.winner || "",
+            "Kill Leader": p.killLeader || "",
+            "Note": p.predictions || p.notes || ""
+          },
           timestamp: p.timestamp || p.date || new Date().toISOString(),
         }));
         localStorage.setItem("tournament_predictions", JSON.stringify(migrated));
@@ -113,51 +130,37 @@ const PredictionsManager = () => {
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (prediction: Prediction) => {
-    setEditForm(prediction);
-    setIsEditMode(true);
-    setIsDialogOpen(true);
-  };
-
-  const handleCreateNew = () => {
-    setEditForm({
-      username: "",
-      twitchId: "",
-      tournament: "",
-      winner: "",
-      killLeader: "",
-      notes: "",
-      timestamp: "", // empty means new
-    });
-    setIsEditMode(true);
-    setIsDialogOpen(true);
-  };
-
-  const handleSaveEdit = () => {
-    if (editForm) {
-      if (!editForm.username || !editForm.twitchId || !editForm.tournament || !editForm.winner) {
-        toast.error("Compila i campi obbligatori: Username, ID Twitch, Torneo, Vincitore");
-        return;
-      }
-      const existsIndex = predictions.findIndex((p) => p.timestamp === editForm.timestamp && editForm.timestamp);
-      let updated = [...predictions];
-      if (existsIndex !== -1) {
-        updated[existsIndex] = editForm;
-      } else {
-        const toAdd = { ...editForm, timestamp: new Date().toISOString() };
-        updated = [toAdd, ...updated];
-      }
-      localStorage.setItem("tournament_predictions", JSON.stringify(updated));
-      setPredictions(updated);
-      toast.success("Prediction salvata!");
-      setIsDialogOpen(false);
-      setEditForm(null);
+  const handleAddField = () => {
+    if (!newField.label) {
+      toast.error("Inserisci un'etichetta per il campo");
+      return;
     }
+
+    const field: PredictionField = {
+      id: Date.now().toString(),
+      label: newField.label,
+      type: newField.type,
+      required: newField.required,
+      options: newField.type === 'select' ? newField.options.split(',').map(o => o.trim()).filter(Boolean) : undefined
+    };
+
+    setCustomFields([...customFields, field]);
+    setNewField({ label: "", type: "text", required: true, options: "" });
+    toast.success("Campo aggiunto!");
+  };
+
+  const handleRemoveField = (fieldId: string) => {
+    setCustomFields(customFields.filter(f => f.id !== fieldId));
   };
 
   const handleCreateCampaign = () => {
     if (!newCampaign.tournamentId || !newCampaign.startDate || !newCampaign.endDate) {
-      toast.error("Compila tutti i campi della campagna");
+      toast.error("Compila tutti i campi della prediction");
+      return;
+    }
+
+    if (customFields.length === 0) {
+      toast.error("Aggiungi almeno un campo personalizzato");
       return;
     }
 
@@ -173,6 +176,7 @@ const PredictionsManager = () => {
       tournamentName: tournament.name,
       startDate: newCampaign.startDate,
       endDate: newCampaign.endDate,
+      fields: customFields,
       createdAt: new Date().toISOString()
     };
 
@@ -181,15 +185,16 @@ const PredictionsManager = () => {
     setCampaigns(updated);
     setIsCampaignDialogOpen(false);
     setNewCampaign({ tournamentId: "", startDate: "", endDate: "" });
-    toast.success("Campagna creata con successo!");
+    setCustomFields([]);
+    toast.success("Prediction creata con successo!");
   };
 
   const handleDeleteCampaign = (campaignId: string) => {
-    if (confirm("Eliminare questa campagna? Le prediction già inviate non saranno eliminate.")) {
+    if (confirm("Eliminare questa prediction? Le prediction già inviate non saranno eliminate.")) {
       const updated = campaigns.filter(c => c.id !== campaignId);
       localStorage.setItem("prediction_campaigns", JSON.stringify(updated));
       setCampaigns(updated);
-      toast.success("Campagna eliminata!");
+      toast.success("Prediction eliminata!");
     }
   };
 
@@ -217,18 +222,26 @@ const PredictionsManager = () => {
   }, []);
 
   const handleExport = () => {
-    const csv = [
-      ["Username", "ID Twitch", "Torneo", "Vincitore Previsto", "Kill Leader", "Note", "Data"],
-      ...predictions.map(p => [
-        p.username,
-        p.twitchId,
-        p.tournament,
-        p.winner,
-        p.killLeader,
-        p.notes || "",
-        p.timestamp
-      ])
-    ].map(row => row.join(",")).join("\n");
+    // Get all unique field names
+    const allFieldNames = new Set<string>();
+    predictions.forEach(p => {
+      if (p.responses) {
+        Object.keys(p.responses).forEach(key => allFieldNames.add(key));
+      }
+    });
+    
+    const fieldArray = Array.from(allFieldNames);
+    const headers = ["Username", "ID Twitch", "Torneo", ...fieldArray, "Data"];
+    
+    const rows = predictions.map(p => [
+      p.username,
+      p.twitchId,
+      p.tournament,
+      ...fieldArray.map(field => (p.responses && p.responses[field]) || ""),
+      p.timestamp
+    ]);
+
+    const csv = [headers, ...rows].map(row => row.join(",")).join("\n");
 
     const blob = new Blob([csv], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
@@ -256,16 +269,16 @@ const PredictionsManager = () => {
 
   return (
     <div className="space-y-6">
-      {/* Gestione Campagne */}
+      {/* Gestione Predictions */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between flex-wrap gap-4">
             <CardTitle className="flex items-center gap-2">
               <Calendar className="w-5 h-5" />
-              Campagne Prediction
+              Predictions Attive
             </CardTitle>
             <Button onClick={() => setIsCampaignDialogOpen(true)} className="gap-2">
-              <Plus className="w-4 h-4" /> Crea Campagna
+              <Plus className="w-4 h-4" /> Crea Prediction
             </Button>
           </div>
         </CardHeader>
@@ -274,7 +287,7 @@ const PredictionsManager = () => {
             <div className="text-center py-8">
               <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">
-                Nessuna campagna attiva. Crea una campagna per permettere agli utenti di inviare predictions.
+                Nessuna prediction attiva. Crea una prediction per permettere agli utenti di inviare le loro previsioni.
               </p>
             </div>
           ) : (
@@ -343,9 +356,6 @@ const PredictionsManager = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <Button onClick={handleCreateNew} variant="default" className="gap-2">
-                <Plus className="w-4 h-4" /> Crea Prediction
-              </Button>
               {predictions.length > 0 && (
                 <>
                   <Button onClick={handleExport} variant="outline" className="gap-2">
@@ -384,9 +394,11 @@ const PredictionsManager = () => {
                       <p className="text-muted-foreground">
                         <strong>Torneo:</strong> {prediction.tournament}
                       </p>
-                      <p className="text-muted-foreground">
-                        <strong>Vincitore:</strong> {prediction.winner} | <strong>Kill Leader:</strong> {prediction.killLeader}
-                      </p>
+                      {prediction.responses && Object.entries(prediction.responses).map(([key, value]) => (
+                        <p key={key} className="text-muted-foreground">
+                          <strong>{key}:</strong> {value}
+                        </p>
+                      ))}
                       <p className="text-xs text-muted-foreground">
                         {new Date(prediction.timestamp).toLocaleString('it-IT')}
                       </p>
@@ -399,13 +411,6 @@ const PredictionsManager = () => {
                       onClick={() => handleView(prediction)}
                     >
                       <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => handleEdit(prediction)}
-                    >
-                      <Edit className="w-4 h-4" />
                     </Button>
                     <Button
                       size="icon"
@@ -422,13 +427,13 @@ const PredictionsManager = () => {
         </CardContent>
       </Card>
 
-      {/* Dialog Crea Campagna */}
+      {/* Dialog Crea Prediction */}
       <Dialog open={isCampaignDialogOpen} onOpenChange={setIsCampaignDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Crea Nuova Campagna Prediction</DialogTitle>
+            <DialogTitle>Crea Nuova Prediction</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
               <Label>Torneo</Label>
               <Select value={newCampaign.tournamentId} onValueChange={(value) => setNewCampaign({...newCampaign, tournamentId: value})}>
@@ -442,86 +447,113 @@ const PredictionsManager = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>Data e Ora Inizio</Label>
-              <Input
-                type="datetime-local"
-                value={newCampaign.startDate}
-                onChange={(e) => setNewCampaign({...newCampaign, startDate: e.target.value})}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Data e Ora Inizio</Label>
+                <Input
+                  type="datetime-local"
+                  value={newCampaign.startDate}
+                  onChange={(e) => setNewCampaign({...newCampaign, startDate: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Data e Ora Fine</Label>
+                <Input
+                  type="datetime-local"
+                  value={newCampaign.endDate}
+                  onChange={(e) => setNewCampaign({...newCampaign, endDate: e.target.value})}
+                />
+              </div>
             </div>
-            <div>
-              <Label>Data e Ora Fine</Label>
-              <Input
-                type="datetime-local"
-                value={newCampaign.endDate}
-                onChange={(e) => setNewCampaign({...newCampaign, endDate: e.target.value})}
-              />
+
+            <div className="border-t pt-4">
+              <h3 className="font-semibold mb-4">Campi Personalizzati</h3>
+              
+              {customFields.length > 0 && (
+                <div className="space-y-2 mb-4">
+                  {customFields.map((field) => (
+                    <div key={field.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                      <div className="flex-1">
+                        <p className="font-medium">{field.label}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Tipo: {field.type} {field.required && "• Obbligatorio"}
+                          {field.options && ` • Opzioni: ${field.options.join(", ")}`}
+                        </p>
+                      </div>
+                      <Button size="icon" variant="ghost" onClick={() => handleRemoveField(field.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="space-y-3 p-4 bg-card/50 rounded-lg border">
+                <div>
+                  <Label>Etichetta Campo</Label>
+                  <Input
+                    placeholder="es. Chi vincerà il torneo?"
+                    value={newField.label}
+                    onChange={(e) => setNewField({...newField, label: e.target.value})}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Tipo Campo</Label>
+                    <Select value={newField.type} onValueChange={(value: any) => setNewField({...newField, type: value})}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="text">Testo Breve</SelectItem>
+                        <SelectItem value="textarea">Testo Lungo</SelectItem>
+                        <SelectItem value="select">Scelta Multipla</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-end">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newField.required}
+                        onChange={(e) => setNewField({...newField, required: e.target.checked})}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm">Campo obbligatorio</span>
+                    </label>
+                  </div>
+                </div>
+                {newField.type === 'select' && (
+                  <div>
+                    <Label>Opzioni (separate da virgola)</Label>
+                    <Input
+                      placeholder="Opzione 1, Opzione 2, Opzione 3"
+                      value={newField.options}
+                      onChange={(e) => setNewField({...newField, options: e.target.value})}
+                    />
+                  </div>
+                )}
+                <Button onClick={handleAddField} variant="outline" className="w-full">
+                  <Plus className="w-4 h-4 mr-2" /> Aggiungi Campo
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-2 justify-end">
+
+            <div className="flex gap-2 justify-end border-t pt-4">
               <Button variant="outline" onClick={() => setIsCampaignDialogOpen(false)}>Annulla</Button>
-              <Button onClick={handleCreateCampaign}>Crea Campagna</Button>
+              <Button onClick={handleCreateCampaign}>Crea Prediction</Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Dialog per visualizzare/modificare prediction */}
+      {/* Dialog per visualizzare prediction */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{isEditMode ? "Modifica Prediction" : "Dettaglio Prediction"}</DialogTitle>
+            <DialogTitle>Dettaglio Prediction</DialogTitle>
           </DialogHeader>
-          {isEditMode && editForm ? (
-            <div className="space-y-4">
-              <div>
-                <Label>Username</Label>
-                <Input 
-                  value={editForm.username} 
-                  onChange={(e) => setEditForm({...editForm, username: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>ID Twitch</Label>
-                <Input 
-                  value={editForm.twitchId} 
-                  onChange={(e) => setEditForm({...editForm, twitchId: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Torneo</Label>
-                <Input 
-                  value={editForm.tournament} 
-                  onChange={(e) => setEditForm({...editForm, tournament: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Vincitore Previsto</Label>
-                <Input 
-                  value={editForm.winner} 
-                  onChange={(e) => setEditForm({...editForm, winner: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Kill Leader</Label>
-                <Input 
-                  value={editForm.killLeader} 
-                  onChange={(e) => setEditForm({...editForm, killLeader: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Note Aggiuntive</Label>
-                <Textarea 
-                  value={editForm.notes || ""} 
-                  onChange={(e) => setEditForm({...editForm, notes: e.target.value})}
-                />
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Annulla</Button>
-                <Button onClick={handleSaveEdit}>Salva Modifiche</Button>
-              </div>
-            </div>
-          ) : selectedPrediction && (
+          {selectedPrediction && (
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Username</label>
@@ -535,20 +567,12 @@ const PredictionsManager = () => {
                 <label className="text-sm font-medium text-muted-foreground">Torneo</label>
                 <p>{selectedPrediction.tournament}</p>
               </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Vincitore Previsto</label>
-                <p className="text-lg font-semibold text-primary">{selectedPrediction.winner}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Kill Leader</label>
-                <p className="text-lg font-semibold text-accent">{selectedPrediction.killLeader}</p>
-              </div>
-              {selectedPrediction.notes && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Note Aggiuntive</label>
-                  <p className="text-sm">{selectedPrediction.notes}</p>
+              {selectedPrediction.responses && Object.entries(selectedPrediction.responses).map(([key, value]) => (
+                <div key={key}>
+                  <label className="text-sm font-medium text-muted-foreground">{key}</label>
+                  <p className="text-lg font-semibold">{value}</p>
                 </div>
-              )}
+              ))}
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Data Invio</label>
                 <p className="text-sm">{new Date(selectedPrediction.timestamp).toLocaleString('it-IT')}</p>

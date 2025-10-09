@@ -8,9 +8,7 @@ interface Prediction {
   username: string;
   twitchId: string;
   tournament: string;
-  winner: string;
-  killLeader: string;
-  notes?: string;
+  responses: { [fieldId: string]: string };
   timestamp: string;
 }
 
@@ -102,39 +100,25 @@ const PublicPredictions = () => {
                       </span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3">
+                    <div className="text-xs text-muted-foreground mb-2">
+                      ID Twitch: {prediction.twitchId}
+                    </div>
+                    
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">Torneo</p>
                       <p className="font-semibold">{prediction.tournament}</p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-primary/10 rounded-lg p-3">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Trophy className="w-4 h-4 text-primary" />
-                          <p className="text-xs text-muted-foreground">Vincitore</p>
-                        </div>
-                        <p className="font-bold text-primary">{prediction.winner}</p>
+                    {prediction.responses && Object.entries(prediction.responses).map(([key, value]) => (
+                      <div key={key} className="bg-muted/50 rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground mb-1">{key}</p>
+                        <p className="font-semibold">{value}</p>
                       </div>
+                    ))}
 
-                      <div className="bg-accent/10 rounded-lg p-3">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Crosshair className="w-4 h-4 text-accent" />
-                          <p className="text-xs text-muted-foreground">Kill Leader</p>
-                        </div>
-                        <p className="font-bold text-accent">{prediction.killLeader}</p>
-                      </div>
-                    </div>
-
-                    {prediction.notes && (
-                      <div className="bg-muted/50 rounded-lg p-3">
-                        <p className="text-xs text-muted-foreground mb-1">Note</p>
-                        <p className="text-sm">{prediction.notes}</p>
-                      </div>
-                    )}
-
-                    <div className="text-xs text-muted-foreground">
-                      ID Twitch: {prediction.twitchId}
+                    <div className="text-xs text-muted-foreground pt-2 border-t">
+                      Inviato: {new Date(prediction.timestamp).toLocaleString('it-IT')}
                     </div>
                   </CardContent>
                 </Card>
