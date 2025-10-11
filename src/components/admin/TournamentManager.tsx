@@ -2,22 +2,10 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Edit2, Trash2, Save, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-
-interface Tournament {
-  id: string;
-  name: string;
-  date: string;
-  time: string;
-  prizePool: string;
-  participants: string;
-  status: "upcoming" | "live" | "completed";
-  registrationUrl?: string;
-  liveUrl?: string;
-}
+import { Tournament, getTournamentStatus, TournamentStatus } from "@/lib/tournamentUtils";
 
 const TournamentManager = () => {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -27,9 +15,9 @@ const TournamentManager = () => {
     name: "",
     date: "",
     time: "",
+    duration: 180,
     prizePool: "",
     participants: "",
-    status: "upcoming",
     registrationUrl: "",
     liveUrl: ""
   });
@@ -44,25 +32,27 @@ const TournamentManager = () => {
       setTournaments(JSON.parse(saved));
     } else {
       // Dati iniziali di esempio
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
       const initialTournaments: Tournament[] = [
         {
           id: "1",
           name: "Coppa Italia Fortnite 2024",
-          date: "15 Gen 2024",
-          time: "18:00 CET",
+          date: tomorrow.toISOString().split('T')[0],
+          time: "18:00",
+          duration: 180,
           prizePool: "€10.000",
           participants: "256/256",
-          status: "upcoming",
           registrationUrl: "#"
         },
         {
           id: "2",
           name: "Weekly Italian Cup #47",
-          date: "Oggi",
-          time: "20:00 CET",
+          date: new Date().toISOString().split('T')[0],
+          time: new Date().toTimeString().slice(0, 5),
+          duration: 120,
           prizePool: "€500",
           participants: "128/128",
-          status: "live",
           liveUrl: "https://www.twitch.tv/fortnite"
         }
       ];
@@ -102,9 +92,9 @@ const TournamentManager = () => {
       name: item.name,
       date: item.date,
       time: item.time,
+      duration: item.duration,
       prizePool: item.prizePool,
       participants: item.participants,
-      status: item.status,
       registrationUrl: item.registrationUrl || "",
       liveUrl: item.liveUrl || ""
     });
@@ -125,9 +115,9 @@ const TournamentManager = () => {
       name: "",
       date: "",
       time: "",
+      duration: 180,
       prizePool: "",
       participants: "",
-      status: "upcoming",
       registrationUrl: "",
       liveUrl: ""
     });
@@ -135,7 +125,7 @@ const TournamentManager = () => {
     setIsEditing(false);
   };
 
-  const getStatusBadge = (status: Tournament["status"]) => {
+  const getStatusBadge = (status: TournamentStatus) => {
     const variants = {
       upcoming: "default",
       live: "destructive",
@@ -181,22 +171,32 @@ const TournamentManager = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Data</label>
+                  <label className="text-sm font-medium mb-2 block">Data Inizio</label>
                   <Input
+                    type="date"
                     value={formData.date}
                     onChange={(e) => setFormData({...formData, date: e.target.value})}
-                    placeholder="es. 15 Gen 2024"
                     required
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Ora</label>
+                  <label className="text-sm font-medium mb-2 block">Ora Inizio</label>
                   <Input
+                    type="time"
                     value={formData.time}
                     onChange={(e) => setFormData({...formData, time: e.target.value})}
-                    placeholder="es. 18:00 CET"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Durata (minuti)</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={formData.duration}
+                    onChange={(e) => setFormData({...formData, duration: parseInt(e.target.value) || 180})}
                     required
                   />
                 </div>
@@ -221,25 +221,6 @@ const TournamentManager = () => {
                     required
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">Stato</label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value: Tournament["status"]) => 
-                    setFormData({...formData, status: value})
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="upcoming">Prossimo</SelectItem>
-                    <SelectItem value="live">Live</SelectItem>
-                    <SelectItem value="completed">Completato</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
 
               <div>
@@ -295,11 +276,11 @@ const TournamentManager = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold">{item.name}</h3>
-                      {getStatusBadge(item.status)}
+                      {getStatusBadge(getTournamentStatus(item))}
                     </div>
                     <div className="text-sm text-muted-foreground space-y-1">
-                      <p>📅 {item.date} • ⏰ {item.time}</p>
-                      <p>💰 {item.prizePool} • 👥 {item.participants}</p>
+                      <p>📅 {new Date(item.date).toLocaleDateString('it-IT')} • ⏰ {item.time}</p>
+                      <p>⏱️ Durata: {item.duration} min • 💰 {item.prizePool} • 👥 {item.participants}</p>
                     </div>
                   </div>
                   <div className="flex gap-2 ml-4">

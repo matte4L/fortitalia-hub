@@ -1,28 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tournament, getTournamentStatus, formatTournamentDate } from "@/lib/tournamentUtils";
 
-interface TournamentCardProps {
-  name: string;
-  date: string;
-  time: string;
-  prizePool: string;
-  participants: string;
-  status: 'upcoming' | 'live' | 'completed';
-  registrationUrl?: string;
-  liveUrl?: string;
-}
+interface TournamentCardProps extends Tournament {}
 
-const TournamentCard = ({ 
-  name, 
-  date, 
-  time, 
-  prizePool, 
-  participants, 
-  status, 
-  registrationUrl,
-  liveUrl 
-}: TournamentCardProps) => {
+const TournamentCard = (tournament: TournamentCardProps) => {
+  const status = getTournamentStatus(tournament);
+  
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'live':
@@ -44,27 +29,27 @@ const TournamentCard = ({
             {status === 'live' ? 'LIVE' : status === 'upcoming' ? 'PROSSIMO' : 'COMPLETATO'}
           </Badge>
           <div className="text-right text-sm text-muted-foreground">
-            <div>{date}</div>
-            <div>{time}</div>
+            <div>{formatTournamentDate(tournament.date)}</div>
+            <div>{tournament.time}</div>
           </div>
         </div>
-        <CardTitle className="text-xl text-primary">{name}</CardTitle>
+        <CardTitle className="text-xl text-primary">{tournament.name}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <span className="text-muted-foreground">Premio:</span>
-            <div className="font-semibold text-accent">{prizePool}</div>
+            <div className="font-semibold text-accent">{tournament.prizePool}</div>
           </div>
           <div>
             <span className="text-muted-foreground">Partecipanti:</span>
-            <div className="font-semibold">{participants}</div>
+            <div className="font-semibold">{tournament.participants}</div>
           </div>
         </div>
         
-        {status === 'upcoming' && registrationUrl && (
+        {status === 'upcoming' && tournament.registrationUrl && (
           <Button className="w-full glow-primary" asChild>
-            <a href={registrationUrl} target="_blank" rel="noopener noreferrer">
+            <a href={tournament.registrationUrl} target="_blank" rel="noopener noreferrer">
               Registrati Ora
             </a>
           </Button>
@@ -72,7 +57,7 @@ const TournamentCard = ({
         
         {status === 'live' && (
           <Button variant="destructive" className="w-full glow-accent" asChild>
-            <a href={liveUrl || 'https://www.twitch.tv/fortnite'} target="_blank" rel="noopener noreferrer">
+            <a href={tournament.liveUrl || 'https://www.twitch.tv/fortnite'} target="_blank" rel="noopener noreferrer">
               Guarda Live
             </a>
           </Button>

@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import TournamentCard from "@/components/TournamentCard";
 import { Button } from "@/components/ui/button";
+import { Tournament } from "@/lib/tournamentUtils";
 
 const Tournaments = () => {
-  const [tournamentData, setTournamentData] = useState<any[]>([]);
+  const [tournamentData, setTournamentData] = useState<Tournament[]>([]);
 
   useEffect(() => {
     const loadData = () => {
@@ -13,45 +14,50 @@ const Tournaments = () => {
       if (savedTournaments) {
         setTournamentData(JSON.parse(savedTournaments));
       } else {
-        const initialTournaments = [
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const nextWeek = new Date();
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        
+        const initialTournaments: Tournament[] = [
           {
             id: "1",
             name: "Coppa Italia Fortnite 2024",
-            date: "15 Gen 2024",
-            time: "18:00 CET",
+            date: tomorrow.toISOString().split('T')[0],
+            time: "18:00",
+            duration: 180,
             prizePool: "€10.000",
             participants: "256/256",
-            status: "upcoming",
             registrationUrl: "#"
           },
           {
             id: "2",
             name: "Weekly Italian Cup #47",
-            date: "Oggi",
-            time: "20:00 CET",
+            date: new Date().toISOString().split('T')[0],
+            time: new Date().toTimeString().slice(0, 5),
+            duration: 120,
             prizePool: "€500",
             participants: "128/128",
-            status: "live",
             liveUrl: "https://www.twitch.tv/fortnite"
           },
           {
             id: "3",
             name: "Torneo Solo Regional",
-            date: "20 Gen 2024",
-            time: "19:00 CET",
+            date: nextWeek.toISOString().split('T')[0],
+            time: "19:00",
+            duration: 150,
             prizePool: "€2.000",
             participants: "64/128",
-            status: "upcoming",
             registrationUrl: "#"
           },
           {
             id: "4",
             name: "Duo Championship Italy",
-            date: "25 Gen 2024",
-            time: "17:00 CET",
+            date: nextWeek.toISOString().split('T')[0],
+            time: "17:00",
+            duration: 180,
             prizePool: "€5.000",
             participants: "45/64",
-            status: "upcoming",
             registrationUrl: "#"
           }
         ];
