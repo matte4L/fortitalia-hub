@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Trophy, Target, Users, Eye, AlertCircle } from "lucide-react";
+import { Trophy, Eye, AlertCircle } from "lucide-react";
 
 const Predictions = () => {
   const { toast } = useToast();
@@ -145,26 +145,12 @@ const Predictions = () => {
             </Link>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-4 mb-8">
-            <Card className="bg-card/50 border-primary/20">
+          <div className="flex justify-center mb-8">
+            <Card className="bg-card/50 border-primary/20 w-full max-w-xs">
               <CardContent className="pt-6 text-center">
                 <Trophy className="w-8 h-8 text-primary mx-auto mb-2" />
                 <p className="text-2xl font-bold">{totalPredictions}</p>
                 <p className="text-sm text-muted-foreground">Predictions Totali</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-card/50 border-accent/20">
-              <CardContent className="pt-6 text-center">
-                <Target className="w-8 h-8 text-accent mx-auto mb-2" />
-                <p className="text-2xl font-bold">78%</p>
-                <p className="text-sm text-muted-foreground">Accuratezza Media</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-card/50 border-gaming-cyan/20">
-              <CardContent className="pt-6 text-center">
-                <Users className="w-8 h-8 text-gaming-cyan mx-auto mb-2" />
-                <p className="text-2xl font-bold">128</p>
-                <p className="text-sm text-muted-foreground">Partecipanti Attivi</p>
               </CardContent>
             </Card>
           </div>
@@ -181,7 +167,7 @@ const Predictions = () => {
             <CardContent>
               {!activeCampaign ? (
                 <div className="text-center py-12">
-                  <Target className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">
                     Nessuna prediction attiva. Le predictions saranno disponibili quando verrà attivata una nuova prediction.
                   </p>
