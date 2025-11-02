@@ -3,9 +3,12 @@ import Header from "@/components/Header";
 import TournamentCard from "@/components/TournamentCard";
 import { Button } from "@/components/ui/button";
 import { Tournament } from "@/lib/tournamentUtils";
+import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 
 const Tournaments = () => {
   const [tournamentData, setTournamentData] = useState<Tournament[]>([]);
+  const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation();
+  const { ref: gridRef, isVisible: gridVisible } = useScrollAnimation({ threshold: 0.05 });
 
   useEffect(() => {
     const loadData = () => {
@@ -74,7 +77,12 @@ const Tournaments = () => {
       
       <main className="pt-24 pb-12 px-4">
         <div className="container mx-auto">
-          <div className="text-center mb-12">
+          <div 
+            ref={headerRef}
+            className={`text-center mb-12 transition-all duration-700 ${
+              headerVisible ? 'scroll-visible' : 'scroll-hidden'
+            }`}
+          >
             <h1 className="text-5xl md:text-6xl font-bold mb-4 text-primary">
               Tornei e Eventi
             </h1>
@@ -83,9 +91,19 @@ const Tournaments = () => {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+          <div 
+            ref={gridRef}
+            className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6"
+          >
             {tournamentData.map((tournament, index) => (
-              <TournamentCard key={index} {...tournament} />
+              <div
+                key={index}
+                className={`scroll-hidden-scale stagger-${(index % 6) + 1} ${
+                  gridVisible ? 'scroll-visible-scale' : ''
+                }`}
+              >
+                <TournamentCard {...tournament} />
+              </div>
             ))}
           </div>
           

@@ -2,9 +2,12 @@ import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import PlayerCard from "@/components/PlayerCard";
 import { Button } from "@/components/ui/button";
+import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 
 const Players = () => {
   const [playersData, setPlayersData] = useState<any[]>([]);
+  const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation();
+  const { ref: gridRef, isVisible: gridVisible } = useScrollAnimation({ threshold: 0.05 });
 
   useEffect(() => {
     const loadData = () => {
@@ -110,7 +113,12 @@ const Players = () => {
       
       <main className="pt-24 pb-12 px-4">
         <div className="container mx-auto">
-          <div className="text-center mb-12">
+          <div 
+            ref={headerRef}
+            className={`text-center mb-12 transition-all duration-700 ${
+              headerVisible ? 'scroll-visible' : 'scroll-hidden'
+            }`}
+          >
             <h1 className="text-5xl md:text-6xl font-bold mb-4 text-primary">
               Top Player Italiani
             </h1>
@@ -119,9 +127,19 @@ const Players = () => {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {playersData.map((player) => (
-              <PlayerCard key={player.id} {...player} />
+          <div 
+            ref={gridRef}
+            className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          >
+            {playersData.map((player, index) => (
+              <div
+                key={player.id}
+                className={`scroll-hidden-scale stagger-${(index % 6) + 1} ${
+                  gridVisible ? 'scroll-visible-scale' : ''
+                }`}
+              >
+                <PlayerCard {...player} />
+              </div>
             ))}
           </div>
           
