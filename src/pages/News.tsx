@@ -2,12 +2,10 @@ import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import NewsCard from "@/components/NewsCard";
 import { Button } from "@/components/ui/button";
-import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import ScrollReveal from "@/components/ScrollReveal";
 
 const News = () => {
   const [newsData, setNewsData] = useState<any[]>([]);
-  const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation();
-  const { ref: gridRef, isVisible: gridVisible } = useScrollAnimation({ threshold: 0.05 });
 
   useEffect(() => {
     const loadData = () => {
@@ -67,33 +65,22 @@ const News = () => {
       
       <main className="pt-24 pb-12 px-4">
         <div className="container mx-auto">
-          <div 
-            ref={headerRef}
-            className={`text-center mb-12 transition-all duration-700 ${
-              headerVisible ? 'scroll-visible' : 'scroll-hidden'
-            }`}
-          >
-            <h1 className="text-5xl md:text-6xl font-bold mb-4 text-primary">
-              Ultime Notizie
-            </h1>
-            <p className="text-xl text-muted-foreground">
-              Resta aggiornato con le ultime novità dal mondo competitivo
-            </p>
-          </div>
+          <ScrollReveal>
+            <div className="text-center mb-12">
+              <h1 className="text-5xl md:text-6xl font-bold mb-4 text-primary">
+                Ultime Notizie
+              </h1>
+              <p className="text-xl text-muted-foreground">
+                Resta aggiornato con le ultime novità dal mondo competitivo
+              </p>
+            </div>
+          </ScrollReveal>
           
-          <div 
-            ref={gridRef}
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {newsData.map((article, index) => (
-              <div
-                key={index}
-                className={`scroll-hidden-scale stagger-${(index % 6) + 1} ${
-                  gridVisible ? 'scroll-visible-scale' : ''
-                }`}
-              >
+              <ScrollReveal key={index} delay={index * 50} direction="scale">
                 <NewsCard {...article} />
-              </div>
+              </ScrollReveal>
             ))}
           </div>
           
