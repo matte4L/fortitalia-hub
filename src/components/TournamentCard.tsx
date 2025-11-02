@@ -22,7 +22,7 @@ const TournamentCard = (tournament: TournamentCardProps) => {
   };
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-300 hover:glow-accent">
+    <Card className="hover-lift animate-scale-in">
       <CardHeader>
         <div className="flex justify-between items-start">
           <Badge className={getStatusColor(status)}>
@@ -36,15 +36,9 @@ const TournamentCard = (tournament: TournamentCardProps) => {
         <CardTitle className="text-xl text-primary">{tournament.name}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="text-muted-foreground">Premio:</span>
-            <div className="font-semibold text-accent">{tournament.prizePool}</div>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Partecipanti:</span>
-            <div className="font-semibold">{tournament.participants}</div>
-          </div>
+        <div className="text-sm">
+          <span className="text-muted-foreground">Premio:</span>
+          <div className="font-semibold text-accent text-xl">{tournament.prizePool}</div>
         </div>
         
         {status === 'upcoming' && tournament.registrationUrl && (

@@ -27,7 +27,6 @@ const Tournaments = () => {
             time: "18:00",
             duration: 180,
             prizePool: "€10.000",
-            participants: "256/256",
             registrationUrl: "#"
           },
           {
@@ -37,7 +36,6 @@ const Tournaments = () => {
             time: new Date().toTimeString().slice(0, 5),
             duration: 120,
             prizePool: "€500",
-            participants: "128/128",
             liveUrl: "https://www.twitch.tv/fortnite"
           },
           {
@@ -47,7 +45,6 @@ const Tournaments = () => {
             time: "19:00",
             duration: 150,
             prizePool: "€2.000",
-            participants: "64/128",
             registrationUrl: "#"
           },
           {
@@ -57,7 +54,6 @@ const Tournaments = () => {
             time: "17:00",
             duration: 180,
             prizePool: "€5.000",
-            participants: "45/64",
             registrationUrl: "#"
           }
         ];

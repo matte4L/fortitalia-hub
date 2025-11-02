@@ -11,13 +11,13 @@ interface NewsCardProps {
 
 const NewsCard = ({ title, excerpt, date, category, image }: NewsCardProps) => {
   return (
-    <Card className="hover:shadow-lg transition-all duration-300 hover:glow-primary cursor-pointer">
+    <Card className="hover-lift animate-fade-in cursor-pointer">
       {image && (
         <div className="aspect-video w-full overflow-hidden rounded-t-lg">
           <img 
             src={image} 
             alt={title}
-            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
           />
         </div>
       )}

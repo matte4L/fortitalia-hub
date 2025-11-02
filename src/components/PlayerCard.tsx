@@ -22,12 +22,12 @@ const PlayerCard = ({
   earnings = "$0"
 }: PlayerCardProps) => {
   return (
-    <Card className="hover:shadow-lg transition-all duration-300 hover:glow-accent cursor-pointer overflow-hidden">
+    <Card className="hover-lift hover-glow animate-scale-in cursor-pointer overflow-hidden">
       <div className="aspect-square w-full overflow-hidden bg-muted">
         <img 
           src={image || "/placeholder.svg"} 
           alt={nickname}
-          className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+          className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
         />
       </div>
       <CardHeader className="pb-3">

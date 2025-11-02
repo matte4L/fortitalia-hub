@@ -39,8 +39,8 @@ const Index = () => {
           <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/70 to-background/90"></div>
         </div>
         
-        <div className="relative z-10 text-center max-w-4xl mx-auto px-4">
-          <h1 className="text-6xl md:text-8xl font-bold mb-6">
+        <div className="relative z-10 text-center max-w-4xl mx-auto px-4 animate-fade-in-slow">
+          <h1 className="text-6xl md:text-8xl font-bold mb-6 animate-slide-up">
             <span className="text-white drop-shadow-[0_0_20px_rgba(0,255,157,0.5)]">
               FORTNITE
             </span>
@@ -53,12 +53,12 @@ const Index = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/predictions">
-              <Button size="lg" className="glow-primary">
+              <Button size="lg" className="glow-primary hover-lift">
                 Invia le Tue Predictions
               </Button>
             </Link>
             <Link to="/tournaments">
-              <Button size="lg" variant="outline" className="glow-accent">
+              <Button size="lg" variant="outline" className="glow-accent hover-lift">
                 Guarda i Tornei Live
               </Button>
             </Link>
@@ -69,7 +69,7 @@ const Index = () => {
       {/* News Section */}
       <section className="py-20 px-4 bg-background">
         <div className="container mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-12 animate-fade-in">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 text-primary">
               Ultime Notizie
             </h2>

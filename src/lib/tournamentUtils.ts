@@ -5,7 +5,6 @@ export interface Tournament {
   time: string; // HH:MM format
   duration: number; // durata in minuti
   prizePool: string;
-  participants: string;
   registrationUrl?: string;
   liveUrl?: string;
 }

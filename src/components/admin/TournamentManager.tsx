@@ -17,7 +17,6 @@ const TournamentManager = () => {
     time: "",
     duration: 180,
     prizePool: "",
-    participants: "",
     registrationUrl: "",
     liveUrl: ""
   });
@@ -42,7 +41,6 @@ const TournamentManager = () => {
           time: "18:00",
           duration: 180,
           prizePool: "€10.000",
-          participants: "256/256",
           registrationUrl: "#"
         },
         {
@@ -52,7 +50,6 @@ const TournamentManager = () => {
           time: new Date().toTimeString().slice(0, 5),
           duration: 120,
           prizePool: "€500",
-          participants: "128/128",
           liveUrl: "https://www.twitch.tv/fortnite"
         }
       ];
@@ -94,7 +91,6 @@ const TournamentManager = () => {
       time: item.time,
       duration: item.duration,
       prizePool: item.prizePool,
-      participants: item.participants,
       registrationUrl: item.registrationUrl || "",
       liveUrl: item.liveUrl || ""
     });
@@ -117,7 +113,6 @@ const TournamentManager = () => {
       time: "",
       duration: 180,
       prizePool: "",
-      participants: "",
       registrationUrl: "",
       liveUrl: ""
     });
@@ -202,25 +197,14 @@ const TournamentManager = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Prize Pool</label>
-                  <Input
-                    value={formData.prizePool}
-                    onChange={(e) => setFormData({...formData, prizePool: e.target.value})}
-                    placeholder="es. €10.000"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Partecipanti</label>
-                  <Input
-                    value={formData.participants}
-                    onChange={(e) => setFormData({...formData, participants: e.target.value})}
-                    placeholder="es. 256/256"
-                    required
-                  />
-                </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Prize Pool</label>
+                <Input
+                  value={formData.prizePool}
+                  onChange={(e) => setFormData({...formData, prizePool: e.target.value})}
+                  placeholder="es. €10.000"
+                  required
+                />
               </div>
 
               <div>
@@ -280,7 +264,7 @@ const TournamentManager = () => {
                     </div>
                     <div className="text-sm text-muted-foreground space-y-1">
                       <p>📅 {new Date(item.date).toLocaleDateString('it-IT')} • ⏰ {item.time}</p>
-                      <p>⏱️ Durata: {item.duration} min • 💰 {item.prizePool} • 👥 {item.participants}</p>
+                      <p>⏱️ Durata: {item.duration} min • 💰 {item.prizePool}</p>
                     </div>
                   </div>
                   <div className="flex gap-2 ml-4">
