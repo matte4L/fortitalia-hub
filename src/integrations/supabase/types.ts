@@ -14,16 +14,242 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      news: {
+        Row: {
+          category: string
+          created_at: string | null
+          date: string
+          excerpt: string
+          id: string
+          image: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          date: string
+          excerpt: string
+          id?: string
+          image: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          date?: string
+          excerpt?: string
+          id?: string
+          image?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      players: {
+        Row: {
+          created_at: string | null
+          earnings: string
+          id: string
+          image: string
+          kd: string
+          name: string
+          nickname: string
+          pr: number
+          role: string
+          team: string
+          tournaments: number
+          updated_at: string | null
+          wins: number
+        }
+        Insert: {
+          created_at?: string | null
+          earnings: string
+          id?: string
+          image: string
+          kd: string
+          name: string
+          nickname: string
+          pr?: number
+          role: string
+          team: string
+          tournaments?: number
+          updated_at?: string | null
+          wins?: number
+        }
+        Update: {
+          created_at?: string | null
+          earnings?: string
+          id?: string
+          image?: string
+          kd?: string
+          name?: string
+          nickname?: string
+          pr?: number
+          role?: string
+          team?: string
+          tournaments?: number
+          updated_at?: string | null
+          wins?: number
+        }
+        Relationships: []
+      }
+      prediction_campaigns: {
+        Row: {
+          created_at: string | null
+          end_date: string
+          fields: Json
+          id: string
+          is_active: boolean
+          start_date: string
+          tournament_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_date: string
+          fields: Json
+          id?: string
+          is_active?: boolean
+          start_date: string
+          tournament_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          end_date?: string
+          fields?: Json
+          id?: string
+          is_active?: boolean
+          start_date?: string
+          tournament_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prediction_campaigns_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      predictions: {
+        Row: {
+          campaign_id: string
+          id: string
+          responses: Json
+          submitted_at: string | null
+          twitch_id: string
+          username: string
+        }
+        Insert: {
+          campaign_id: string
+          id?: string
+          responses: Json
+          submitted_at?: string | null
+          twitch_id: string
+          username: string
+        }
+        Update: {
+          campaign_id?: string
+          id?: string
+          responses?: Json
+          submitted_at?: string | null
+          twitch_id?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "predictions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "prediction_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournaments: {
+        Row: {
+          created_at: string | null
+          date: string
+          game: string
+          id: string
+          live_url: string | null
+          name: string
+          prize: string
+          registration_url: string | null
+          status: Database["public"]["Enums"]["tournament_status"]
+          time: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          game: string
+          id?: string
+          live_url?: string | null
+          name: string
+          prize: string
+          registration_url?: string | null
+          status?: Database["public"]["Enums"]["tournament_status"]
+          time: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          game?: string
+          id?: string
+          live_url?: string | null
+          name?: string
+          prize?: string
+          registration_url?: string | null
+          status?: Database["public"]["Enums"]["tournament_status"]
+          time?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      tournament_status: "upcoming" | "live" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +376,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      tournament_status: ["upcoming", "live", "completed"],
+    },
   },
 } as const
