@@ -1,36 +1,34 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Newspaper, Trophy, Users, Mail, Target } from "lucide-react";
+import { LogOut, Newspaper, Trophy, Users, Target } from "lucide-react";
 import { toast } from "sonner";
 import NewsManager from "@/components/admin/NewsManager";
 import TournamentManager from "@/components/admin/TournamentManager";
 import PlayerManager from "@/components/admin/PlayerManager";
 import PredictionsManager from "@/components/admin/PredictionsManager";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user, isAdmin, loading } = useAuth();
 
   useEffect(() => {
-    // Verifica autenticazione
-    const token = localStorage.getItem("admin_token");
-    if (!token) {
+    if (!loading && (!user || !isAdmin)) {
       toast.error("Accesso non autorizzato!");
       navigate("/admin");
-    } else {
-      setIsAuthenticated(true);
     }
-  }, [navigate]);
+  }, [user, isAdmin, loading, navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("admin_token");
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     toast.success("Logout effettuato!");
-    navigate("/admin");
+    navigate("/");
   };
 
-  if (!isAuthenticated) {
+  if (loading || !user || !isAdmin) {
     return null;
   }
 

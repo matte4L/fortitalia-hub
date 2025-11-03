@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit2, Trash2, Save, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NewsItem {
   id: string;
@@ -27,66 +28,56 @@ const NewsManager = () => {
     category: "",
     image: "/placeholder.svg"
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadNews();
   }, []);
 
-  const loadNews = () => {
-    const saved = localStorage.getItem("news_data");
-    if (saved) {
-      setNews(JSON.parse(saved));
-    } else {
-      // Dati iniziali di esempio
-      const initialNews: NewsItem[] = [
-        {
-          id: "1",
-          title: "Nuova Stagione Fortnite: Tutto quello che devi sapere",
-          excerpt: "La nuova stagione di Fortnite porta tante novità per i giocatori competitivi italiani. Scopri le nuove meccaniche e strategie...",
-          date: "2 giorni fa",
-          category: "Aggiornamenti",
-          image: "/placeholder.svg"
-        },
-        {
-          id: "2",
-          title: "Team italiano vince il campionato europeo",
-          excerpt: "Un incredibile successo per l'Italia nel panorama competitivo di Fortnite. Il team 'Gladiatori' conquista il primo posto...",
-          date: "1 settimana fa",
-          category: "Competitivo",
-          image: "/placeholder.svg"
-        }
-      ];
-      setNews(initialNews);
-      localStorage.setItem("news_data", JSON.stringify(initialNews));
+  const loadNews = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('news')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setNews(data || []);
+    } catch (error: any) {
+      console.error('Error loading news:', error);
+      toast.error("Errore nel caricamento delle notizie");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const saveNews = (updatedNews: NewsItem[]) => {
-    localStorage.setItem("news_data", JSON.stringify(updatedNews));
-    setNews(updatedNews);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingId) {
-      // Modifica notizia esistente
-      const updated = news.map(item => 
-        item.id === editingId ? { ...formData, id: editingId } : item
-      );
-      saveNews(updated);
-      toast.success("Notizia aggiornata!");
-    } else {
-      // Aggiungi nuova notizia
-      const newItem: NewsItem = {
-        ...formData,
-        id: Date.now().toString(),
-      };
-      saveNews([newItem, ...news]);
-      toast.success("Notizia aggiunta!");
-    }
+    try {
+      if (editingId) {
+        const { error } = await supabase
+          .from('news')
+          .update(formData)
+          .eq('id', editingId);
 
-    resetForm();
+        if (error) throw error;
+        toast.success("Notizia aggiornata!");
+      } else {
+        const { error } = await supabase
+          .from('news')
+          .insert([formData]);
+
+        if (error) throw error;
+        toast.success("Notizia aggiunta!");
+      }
+
+      await loadNews();
+      resetForm();
+    } catch (error: any) {
+      console.error('Error saving news:', error);
+      toast.error(error.message || "Errore nel salvataggio");
+    }
   };
 
   const handleEdit = (item: NewsItem) => {
@@ -101,11 +92,22 @@ const NewsManager = () => {
     setIsEditing(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm("Sei sicuro di voler eliminare questa notizia?")) {
-      const updated = news.filter(item => item.id !== id);
-      saveNews(updated);
-      toast.success("Notizia eliminata!");
+      try {
+        const { error } = await supabase
+          .from('news')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+        
+        await loadNews();
+        toast.success("Notizia eliminata!");
+      } catch (error: any) {
+        console.error('Error deleting news:', error);
+        toast.error("Errore nell'eliminazione");
+      }
     }
   };
 
@@ -121,9 +123,12 @@ const NewsManager = () => {
     setIsEditing(false);
   };
 
+  if (loading) {
+    return <div className="text-center py-8">Caricamento...</div>;
+  }
+
   return (
     <div className="space-y-6">
-      {/* Form */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -207,7 +212,6 @@ const NewsManager = () => {
         )}
       </Card>
 
-      {/* Lista Notizie */}
       <Card>
         <CardHeader>
           <CardTitle>Notizie Pubblicate ({news.length})</CardTitle>

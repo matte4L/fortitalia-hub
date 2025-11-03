@@ -10,6 +10,7 @@ import Players from "./pages/Players";
 import Predictions from "./pages/Predictions";
 import PublicPredictions from "./pages/PublicPredictions";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/players" element={<Players />} />
           <Route path="/predictions" element={<Predictions />} />
           <Route path="/public-predictions" element={<PublicPredictions />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/admin" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

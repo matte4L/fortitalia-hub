@@ -5,7 +5,20 @@ import { Input } from "@/components/ui/input";
 import { Plus, Edit2, Trash2, Save, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { Tournament, getTournamentStatus, TournamentStatus } from "@/lib/tournamentUtils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Tournament {
+  id: string;
+  name: string;
+  game: string;
+  date: string;
+  time: string;
+  prize: string;
+  status: 'upcoming' | 'live' | 'completed';
+  registration_url?: string;
+  live_url?: string;
+}
 
 const TournamentManager = () => {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -13,114 +26,116 @@ const TournamentManager = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Omit<Tournament, "id">>({
     name: "",
+    game: "Fortnite",
     date: "",
     time: "",
-    duration: 180,
-    prizePool: "",
-    registrationUrl: "",
-    liveUrl: ""
+    prize: "",
+    status: "upcoming",
+    registration_url: "",
+    live_url: ""
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadTournaments();
   }, []);
 
-  const loadTournaments = () => {
-    const saved = localStorage.getItem("tournaments_data");
-    if (saved) {
-      setTournaments(JSON.parse(saved));
-    } else {
-      // Dati iniziali di esempio
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const initialTournaments: Tournament[] = [
-        {
-          id: "1",
-          name: "Coppa Italia Fortnite 2024",
-          date: tomorrow.toISOString().split('T')[0],
-          time: "18:00",
-          duration: 180,
-          prizePool: "€10.000",
-          registrationUrl: "#"
-        },
-        {
-          id: "2",
-          name: "Weekly Italian Cup #47",
-          date: new Date().toISOString().split('T')[0],
-          time: new Date().toTimeString().slice(0, 5),
-          duration: 120,
-          prizePool: "€500",
-          liveUrl: "https://www.twitch.tv/fortnite"
-        }
-      ];
-      setTournaments(initialTournaments);
-      localStorage.setItem("tournaments_data", JSON.stringify(initialTournaments));
+  const loadTournaments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tournaments')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+      setTournaments(data || []);
+    } catch (error: any) {
+      console.error('Error loading tournaments:', error);
+      toast.error("Errore nel caricamento dei tornei");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const saveTournaments = (updated: Tournament[]) => {
-    localStorage.setItem("tournaments_data", JSON.stringify(updated));
-    setTournaments(updated);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingId) {
-      const updated = tournaments.map(item => 
-        item.id === editingId ? { ...formData, id: editingId } : item
-      );
-      saveTournaments(updated);
-      toast.success("Torneo aggiornato!");
-    } else {
-      const newItem: Tournament = {
-        ...formData,
-        id: Date.now().toString(),
-      };
-      saveTournaments([newItem, ...tournaments]);
-      toast.success("Torneo aggiunto!");
-    }
+    try {
+      if (editingId) {
+        const { error } = await supabase
+          .from('tournaments')
+          .update(formData)
+          .eq('id', editingId);
 
-    resetForm();
+        if (error) throw error;
+        toast.success("Torneo aggiornato!");
+      } else {
+        const { error } = await supabase
+          .from('tournaments')
+          .insert([formData]);
+
+        if (error) throw error;
+        toast.success("Torneo aggiunto!");
+      }
+
+      await loadTournaments();
+      resetForm();
+    } catch (error: any) {
+      console.error('Error saving tournament:', error);
+      toast.error(error.message || "Errore nel salvataggio");
+    }
   };
 
   const handleEdit = (item: Tournament) => {
     setFormData({
       name: item.name,
+      game: item.game,
       date: item.date,
       time: item.time,
-      duration: item.duration,
-      prizePool: item.prizePool,
-      registrationUrl: item.registrationUrl || "",
-      liveUrl: item.liveUrl || ""
+      prize: item.prize,
+      status: item.status,
+      registration_url: item.registration_url || "",
+      live_url: item.live_url || ""
     });
     setEditingId(item.id);
     setIsEditing(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm("Sei sicuro di voler eliminare questo torneo?")) {
-      const updated = tournaments.filter(item => item.id !== id);
-      saveTournaments(updated);
-      toast.success("Torneo eliminato!");
+      try {
+        const { error } = await supabase
+          .from('tournaments')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+        
+        await loadTournaments();
+        toast.success("Torneo eliminato!");
+      } catch (error: any) {
+        console.error('Error deleting tournament:', error);
+        toast.error("Errore nell'eliminazione");
+      }
     }
   };
 
   const resetForm = () => {
     setFormData({
       name: "",
+      game: "Fortnite",
       date: "",
       time: "",
-      duration: 180,
-      prizePool: "",
-      registrationUrl: "",
-      liveUrl: ""
+      prize: "",
+      status: "upcoming",
+      registration_url: "",
+      live_url: ""
     });
     setEditingId(null);
     setIsEditing(false);
   };
 
-  const getStatusBadge = (status: TournamentStatus) => {
+  const getStatusBadge = (status: string) => {
     const variants = {
       upcoming: "default",
       live: "destructive",
@@ -133,12 +148,15 @@ const TournamentManager = () => {
       completed: "COMPLETATO"
     };
 
-    return <Badge variant={variants[status]}>{labels[status]}</Badge>;
+    return <Badge variant={variants[status as keyof typeof variants]}>{labels[status as keyof typeof labels]}</Badge>;
   };
+
+  if (loading) {
+    return <div className="text-center py-8">Caricamento...</div>;
+  }
 
   return (
     <div className="space-y-6">
-      {/* Form */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -168,7 +186,7 @@ const TournamentManager = () => {
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Data Inizio</label>
+                  <label className="text-sm font-medium mb-2 block">Data</label>
                   <Input
                     type="date"
                     value={formData.date}
@@ -177,7 +195,7 @@ const TournamentManager = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Ora Inizio</label>
+                  <label className="text-sm font-medium mb-2 block">Ora</label>
                   <Input
                     type="time"
                     value={formData.time}
@@ -186,22 +204,25 @@ const TournamentManager = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Durata (minuti)</label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={formData.duration}
-                    onChange={(e) => setFormData({...formData, duration: parseInt(e.target.value) || 180})}
-                    required
-                  />
+                  <label className="text-sm font-medium mb-2 block">Status</label>
+                  <Select value={formData.status} onValueChange={(value: any) => setFormData({...formData, status: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="upcoming">Prossimo</SelectItem>
+                      <SelectItem value="live">Live</SelectItem>
+                      <SelectItem value="completed">Completato</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
               <div>
                 <label className="text-sm font-medium mb-2 block">Prize Pool</label>
                 <Input
-                  value={formData.prizePool}
-                  onChange={(e) => setFormData({...formData, prizePool: e.target.value})}
+                  value={formData.prize}
+                  onChange={(e) => setFormData({...formData, prize: e.target.value})}
                   placeholder="es. €10.000"
                   required
                 />
@@ -210,8 +231,8 @@ const TournamentManager = () => {
               <div>
                 <label className="text-sm font-medium mb-2 block">URL Registrazione (opzionale)</label>
                 <Input
-                  value={formData.registrationUrl}
-                  onChange={(e) => setFormData({...formData, registrationUrl: e.target.value})}
+                  value={formData.registration_url}
+                  onChange={(e) => setFormData({...formData, registration_url: e.target.value})}
                   placeholder="https://..."
                 />
               </div>
@@ -219,8 +240,8 @@ const TournamentManager = () => {
               <div>
                 <label className="text-sm font-medium mb-2 block">URL Live Stream (opzionale)</label>
                 <Input
-                  value={formData.liveUrl}
-                  onChange={(e) => setFormData({...formData, liveUrl: e.target.value})}
+                  value={formData.live_url}
+                  onChange={(e) => setFormData({...formData, live_url: e.target.value})}
                   placeholder="https://www.twitch.tv/..."
                 />
               </div>
@@ -240,7 +261,6 @@ const TournamentManager = () => {
         )}
       </Card>
 
-      {/* Lista Tornei */}
       <Card>
         <CardHeader>
           <CardTitle>Tornei ({tournaments.length})</CardTitle>
@@ -260,11 +280,11 @@ const TournamentManager = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold">{item.name}</h3>
-                      {getStatusBadge(getTournamentStatus(item))}
+                      {getStatusBadge(item.status)}
                     </div>
                     <div className="text-sm text-muted-foreground space-y-1">
                       <p>📅 {new Date(item.date).toLocaleDateString('it-IT')} • ⏰ {item.time}</p>
-                      <p>⏱️ Durata: {item.duration} min • 💰 {item.prizePool}</p>
+                      <p>💰 {item.prize}</p>
                     </div>
                   </div>
                   <div className="flex gap-2 ml-4">

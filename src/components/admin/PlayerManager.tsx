@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Plus, Edit2, Trash2, Save, X } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Player {
   id: string;
@@ -35,60 +36,56 @@ const PlayerManager = () => {
     pr: 0,
     earnings: "$0"
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadPlayers();
   }, []);
 
-  const loadPlayers = () => {
-    const saved = localStorage.getItem("players_data");
-    if (saved) {
-      setPlayers(JSON.parse(saved));
-    } else {
-      const initialPlayers: Player[] = [
-        {
-          id: "1",
-          name: "Marco Rossi",
-          nickname: "MRossi_FN",
-          role: "IGL",
-          team: "Team Italia",
-          image: "/placeholder.svg",
-          wins: 45,
-          kd: "3.2",
-          tournaments: 28,
-          pr: 1250,
-          earnings: "$15,000"
-        }
-      ];
-      setPlayers(initialPlayers);
-      localStorage.setItem("players_data", JSON.stringify(initialPlayers));
+  const loadPlayers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('players')
+        .select('*')
+        .order('pr', { ascending: false });
+
+      if (error) throw error;
+      setPlayers(data || []);
+    } catch (error: any) {
+      console.error('Error loading players:', error);
+      toast.error("Errore nel caricamento dei players");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const savePlayers = (updated: Player[]) => {
-    localStorage.setItem("players_data", JSON.stringify(updated));
-    setPlayers(updated);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingId) {
-      const updated = players.map(item => 
-        item.id === editingId ? { ...formData, id: editingId } : item
-      );
-      savePlayers(updated);
-      toast.success("Player aggiornato!");
-    } else {
-      const newItem: Player = {
-        ...formData,
-        id: Date.now().toString(),
-      };
-      savePlayers([newItem, ...players]);
-      toast.success("Player aggiunto!");
-    }
+    try {
+      if (editingId) {
+        const { error } = await supabase
+          .from('players')
+          .update(formData)
+          .eq('id', editingId);
 
-    resetForm();
+        if (error) throw error;
+        toast.success("Player aggiornato!");
+      } else {
+        const { error } = await supabase
+          .from('players')
+          .insert([formData]);
+
+        if (error) throw error;
+        toast.success("Player aggiunto!");
+      }
+
+      await loadPlayers();
+      resetForm();
+    } catch (error: any) {
+      console.error('Error saving player:', error);
+      toast.error(error.message || "Errore nel salvataggio");
+    }
   };
 
   const handleEdit = (item: Player) => {
@@ -108,11 +105,22 @@ const PlayerManager = () => {
     setIsEditing(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm("Sei sicuro di voler eliminare questo player?")) {
-      const updated = players.filter(item => item.id !== id);
-      savePlayers(updated);
-      toast.success("Player eliminato!");
+      try {
+        const { error } = await supabase
+          .from('players')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+        
+        await loadPlayers();
+        toast.success("Player eliminato!");
+      } catch (error: any) {
+        console.error('Error deleting player:', error);
+        toast.error("Errore nell'eliminazione");
+      }
     }
   };
 
@@ -133,9 +141,12 @@ const PlayerManager = () => {
     setIsEditing(false);
   };
 
+  if (loading) {
+    return <div className="text-center py-8">Caricamento...</div>;
+  }
+
   return (
     <div className="space-y-6">
-      {/* Form */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -153,6 +164,7 @@ const PlayerManager = () => {
         {isEditing && (
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium mb-2 block">Nome Completo</label>
@@ -273,7 +285,6 @@ const PlayerManager = () => {
         )}
       </Card>
 
-      {/* Lista Players */}
       <Card>
         <CardHeader>
           <CardTitle>Players ({players.length})</CardTitle>
@@ -305,8 +316,6 @@ const PlayerManager = () => {
                         <span>{item.role}</span>
                         <span>•</span>
                         <span>PR: {item.pr}</span>
-                        <span>•</span>
-                        <span>{item.earnings}</span>
                       </div>
                     </div>
                   </div>
