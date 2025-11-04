@@ -5,24 +5,66 @@ import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-fortnite-italy.jpg";
 import NewsCard from "@/components/NewsCard";
 import TournamentCard from "@/components/TournamentCard";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const [newsData, setNewsData] = useState<any[]>([]);
   const [tournamentData, setTournamentData] = useState<any[]>([]);
 
   useEffect(() => {
-    // Carica news
-    const savedNews = localStorage.getItem("news_data");
-    if (savedNews) {
-      setNewsData(JSON.parse(savedNews).slice(0, 3));
-    }
+    loadNews();
+    loadTournaments();
 
-    // Carica tornei
-    const savedTournaments = localStorage.getItem("tournaments_data");
-    if (savedTournaments) {
-      setTournamentData(JSON.parse(savedTournaments).slice(0, 4));
-    }
+    // Real-time updates
+    const newsChannel = supabase
+      .channel('home-news-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'news' }, () => {
+        loadNews();
+      })
+      .subscribe();
+
+    const tournamentsChannel = supabase
+      .channel('home-tournaments-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tournaments' }, () => {
+        loadTournaments();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(newsChannel);
+      supabase.removeChannel(tournamentsChannel);
+    };
   }, []);
+
+  const loadNews = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('news')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      if (error) throw error;
+      setNewsData(data || []);
+    } catch (error) {
+      console.error('Error loading news:', error);
+    }
+  };
+
+  const loadTournaments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tournaments')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(4);
+
+      if (error) throw error;
+      setTournamentData(data || []);
+    } catch (error) {
+      console.error('Error loading tournaments:', error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
