@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pulizia Storage</title>
+</head>
+<body>
+    <h1>Pulizia localStorage completata!</h1>
+    <p>Tutti i dati di esempio sono stati rimossi. Puoi chiudere questa pagina.</p>
+    <script>
+        // Rimuovi tutti i dati localStorage legacy
+        localStorage.removeItem('tournaments_data');
+        localStorage.removeItem('players_data');
+        localStorage.removeItem('news_data');
+        localStorage.removeItem('tournament_predictions');
+        localStorage.removeItem('prediction_campaigns');
+        localStorage.removeItem('predictions');
+        
+        console.log('LocalStorage pulito!');
+    </script>
+</body>
+</html>
