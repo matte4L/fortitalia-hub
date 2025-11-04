@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PredictionField {
   id: string;
@@ -23,6 +24,7 @@ interface PredictionField {
 }
 
 interface Prediction {
+  id?: string;
   username: string;
   twitchId: string;
   tournament: string;
@@ -69,58 +71,88 @@ const PredictionsManager = () => {
     loadTournaments();
   }, []);
 
-  const loadTournaments = () => {
-    const saved = localStorage.getItem("tournaments_data");
-    if (saved) {
-      setTournaments(JSON.parse(saved));
+  const loadTournaments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tournaments')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setTournaments(data || []);
+    } catch (error: any) {
+      console.error('Error loading tournaments:', error);
+      toast.error("Errore nel caricamento dei tornei");
     }
   };
 
-  const loadCampaigns = () => {
-    const saved = localStorage.getItem("prediction_campaigns");
-    if (saved) {
-      setCampaigns(JSON.parse(saved));
+  const loadCampaigns = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('prediction_campaigns')
+        .select('*, tournaments(name)')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      const mapped = data?.map(c => ({
+        id: c.id,
+        tournamentId: c.tournament_id,
+        tournamentName: (c.tournaments as any)?.name || '',
+        startDate: c.start_date,
+        endDate: c.end_date,
+        fields: (c.fields as any) || [],
+        createdAt: c.created_at
+      })) || [];
+      
+      setCampaigns(mapped);
+    } catch (error: any) {
+      console.error('Error loading campaigns:', error);
+      toast.error("Errore nel caricamento delle predictions");
     }
   };
 
-  const loadPredictions = () => {
-    const saved = localStorage.getItem("tournament_predictions");
-    if (saved) {
-      setPredictions(JSON.parse(saved));
-      return;
-    }
-    // Legacy migration - convert old format to new format
-    const legacy = localStorage.getItem("predictions");
-    if (legacy) {
-      try {
-        const legacyArr = JSON.parse(legacy);
-        const migrated = legacyArr.map((p: any) => ({
-          username: p.username || "",
-          twitchId: p.twitchId || p.email || "N/D",
-          tournament: p.tournament || "",
-          responses: {
-            "Vincitore": p.winner || "",
-            "Kill Leader": p.killLeader || "",
-            "Note": p.predictions || p.notes || ""
-          },
-          timestamp: p.timestamp || p.date || new Date().toISOString(),
-        }));
-        localStorage.setItem("tournament_predictions", JSON.stringify(migrated));
-        setPredictions(migrated);
-      } catch (e) {
-        setPredictions([]);
-      }
-    } else {
-      setPredictions([]);
+  const loadPredictions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('predictions')
+        .select('*, prediction_campaigns(tournament_id, tournaments(name))')
+        .order('submitted_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      const mapped = data?.map(p => ({
+        id: p.id,
+        username: p.username,
+        twitchId: p.twitch_id,
+        tournament: ((p.prediction_campaigns as any)?.tournaments as any)?.name || '',
+        responses: (p.responses as any) || {},
+        timestamp: p.submitted_at
+      })) || [];
+      
+      setPredictions(mapped);
+    } catch (error: any) {
+      console.error('Error loading predictions:', error);
+      toast.error("Errore nel caricamento delle predictions");
     }
   };
 
-  const handleDelete = (index: number) => {
+  const handleDelete = async (predictionId: string) => {
     if (confirm("Eliminare questa prediction?")) {
-      const updated = predictions.filter((_, i) => i !== index);
-      localStorage.setItem("tournament_predictions", JSON.stringify(updated));
-      setPredictions(updated);
-      toast.success("Prediction eliminata!");
+      try {
+        const { error } = await supabase
+          .from('predictions')
+          .delete()
+          .eq('id', predictionId);
+        
+        if (error) throw error;
+        
+        await loadPredictions();
+        toast.success("Prediction eliminata!");
+      } catch (error: any) {
+        console.error('Error deleting prediction:', error);
+        toast.error("Errore nell'eliminazione");
+      }
     }
   };
 
@@ -153,7 +185,7 @@ const PredictionsManager = () => {
     setCustomFields(customFields.filter(f => f.id !== fieldId));
   };
 
-  const handleCreateCampaign = () => {
+  const handleCreateCampaign = async () => {
     if (!newCampaign.tournamentId || !newCampaign.startDate || !newCampaign.endDate) {
       toast.error("Compila tutti i campi della prediction");
       return;
@@ -164,37 +196,46 @@ const PredictionsManager = () => {
       return;
     }
 
-    const tournament = tournaments.find(t => t.id === newCampaign.tournamentId);
-    if (!tournament) {
-      toast.error("Torneo non trovato");
-      return;
+    try {
+      const { error } = await supabase
+        .from('prediction_campaigns')
+        .insert([{
+          tournament_id: newCampaign.tournamentId,
+          start_date: newCampaign.startDate,
+          end_date: newCampaign.endDate,
+          fields: customFields as any,
+          is_active: true
+        }]);
+      
+      if (error) throw error;
+      
+      await loadCampaigns();
+      setIsCampaignDialogOpen(false);
+      setNewCampaign({ tournamentId: "", startDate: "", endDate: "" });
+      setCustomFields([]);
+      toast.success("Prediction creata con successo!");
+    } catch (error: any) {
+      console.error('Error creating campaign:', error);
+      toast.error("Errore nella creazione della prediction");
     }
-
-    const campaign: PredictionCampaign = {
-      id: Date.now().toString(),
-      tournamentId: newCampaign.tournamentId,
-      tournamentName: tournament.name,
-      startDate: newCampaign.startDate,
-      endDate: newCampaign.endDate,
-      fields: customFields,
-      createdAt: new Date().toISOString()
-    };
-
-    const updated = [...campaigns, campaign];
-    localStorage.setItem("prediction_campaigns", JSON.stringify(updated));
-    setCampaigns(updated);
-    setIsCampaignDialogOpen(false);
-    setNewCampaign({ tournamentId: "", startDate: "", endDate: "" });
-    setCustomFields([]);
-    toast.success("Prediction creata con successo!");
   };
 
-  const handleDeleteCampaign = (campaignId: string) => {
+  const handleDeleteCampaign = async (campaignId: string) => {
     if (confirm("Eliminare questa prediction? Le prediction già inviate non saranno eliminate.")) {
-      const updated = campaigns.filter(c => c.id !== campaignId);
-      localStorage.setItem("prediction_campaigns", JSON.stringify(updated));
-      setCampaigns(updated);
-      toast.success("Prediction eliminata!");
+      try {
+        const { error } = await supabase
+          .from('prediction_campaigns')
+          .delete()
+          .eq('id', campaignId);
+        
+        if (error) throw error;
+        
+        await loadCampaigns();
+        toast.success("Prediction eliminata!");
+      } catch (error: any) {
+        console.error('Error deleting campaign:', error);
+        toast.error("Errore nell'eliminazione");
+      }
     }
   };
 
@@ -204,21 +245,40 @@ const PredictionsManager = () => {
     }
   };
 
-  const handleClearAll = () => {
+  const handleClearAll = async () => {
     if (confirm("Eliminare TUTTE le predictions? Questa azione non può essere annullata!")) {
-      localStorage.setItem("tournament_predictions", JSON.stringify([]));
-      setPredictions([]);
-      toast.success("Tutte le predictions sono state eliminate!");
+      try {
+        const { error } = await supabase
+          .from('predictions')
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000');
+        
+        if (error) throw error;
+        
+        await loadPredictions();
+        toast.success("Tutte le predictions sono state eliminate!");
+      } catch (error: any) {
+        console.error('Error clearing predictions:', error);
+        toast.error("Errore nell'eliminazione");
+      }
     }
   };
 
-  // Sync con invii da altre pagine/schede
+  // Real-time updates
   useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === "tournament_predictions") loadPredictions();
+    const channel = supabase
+      .channel('predictions-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'predictions' }, () => {
+        loadPredictions();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'prediction_campaigns' }, () => {
+        loadCampaigns();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
     };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
   const handleExport = () => {
@@ -379,9 +439,9 @@ const PredictionsManager = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredPredictions.map((prediction, index) => (
+              {filteredPredictions.map((prediction) => (
                 <div
-                  key={index}
+                  key={prediction.id || prediction.timestamp}
                   className="flex items-center justify-between p-4 bg-card/50 rounded-lg border border-border hover:border-primary/50 transition-colors"
                 >
                   <div className="flex-1">
@@ -415,7 +475,7 @@ const PredictionsManager = () => {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => handleDelete(index)}
+                      onClick={() => prediction.id && handleDelete(prediction.id)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>

@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Target, Trophy, Crosshair } from "lucide-react";
+import { Target } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Prediction {
   username: string;
@@ -15,27 +16,46 @@ interface Prediction {
 const PublicPredictions = () => {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [filterTournament, setFilterTournament] = useState<string>("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadPredictions();
     
-    const handleStorage = () => loadPredictions();
-    window.addEventListener("storage", handleStorage);
-    window.addEventListener("focus", handleStorage);
-    
+    // Real-time updates
+    const channel = supabase
+      .channel('public-predictions-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'predictions' }, () => {
+        loadPredictions();
+      })
+      .subscribe();
+
     return () => {
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("focus", handleStorage);
+      supabase.removeChannel(channel);
     };
   }, []);
 
-  const loadPredictions = () => {
-    const saved = localStorage.getItem("tournament_predictions");
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setPredictions(parsed.sort((a: Prediction, b: Prediction) => 
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      ));
+  const loadPredictions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('predictions')
+        .select('*, prediction_campaigns(tournaments(name))')
+        .order('submitted_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      const mapped = data?.map(p => ({
+        username: p.username,
+        twitchId: p.twitch_id,
+        tournament: ((p.prediction_campaigns as any)?.tournaments as any)?.name || '',
+        responses: (p.responses as any) || {},
+        timestamp: p.submitted_at
+      })) || [];
+      
+      setPredictions(mapped);
+    } catch (error: any) {
+      console.error('Error loading predictions:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -81,7 +101,7 @@ const PublicPredictions = () => {
               <CardContent className="text-center py-12">
                 <Target className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">
-                  Nessuna prediction disponibile al momento.
+                  {loading ? "Caricamento..." : "Nessuna prediction disponibile al momento."}
                 </p>
               </CardContent>
             </Card>

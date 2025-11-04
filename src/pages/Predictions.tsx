@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { Trophy, Eye, AlertCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Predictions = () => {
   const { toast } = useToast();
@@ -22,25 +23,50 @@ const Predictions = () => {
 
   useEffect(() => {
     loadActiveCampaign();
-    const predictions = JSON.parse(localStorage.getItem("tournament_predictions") || "[]");
-    setTotalPredictions(predictions.length);
+    loadTotalPredictions();
   }, []);
 
-  const loadActiveCampaign = () => {
-    const campaigns = localStorage.getItem("prediction_campaigns");
-    if (campaigns) {
-      const parsed = JSON.parse(campaigns);
-      const now = new Date();
-      const active = parsed.find((c: any) => {
-        const start = new Date(c.startDate);
-        const end = new Date(c.endDate);
-        return now >= start && now <= end;
-      });
-      setActiveCampaign(active);
+  const loadTotalPredictions = async () => {
+    try {
+      const { count, error } = await supabase
+        .from('predictions')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) throw error;
+      setTotalPredictions(count || 0);
+    } catch (error: any) {
+      console.error('Error loading predictions count:', error);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const loadActiveCampaign = async () => {
+    try {
+      const now = new Date().toISOString();
+      
+      const { data, error } = await supabase
+        .from('prediction_campaigns')
+        .select('*, tournaments(name)')
+        .lte('start_date', now)
+        .gte('end_date', now)
+        .eq('is_active', true)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      
+      if (data) {
+        setActiveCampaign({
+          id: data.id,
+          tournamentName: (data.tournaments as any)?.name || '',
+          endDate: data.end_date,
+          fields: data.fields
+        });
+      }
+    } catch (error: any) {
+      console.error('Error loading active campaign:', error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!activeCampaign) {
@@ -62,7 +88,7 @@ const Predictions = () => {
     }
 
     // Verifica campi required
-    const missingRequired = activeCampaign.fields?.filter((f: any) => f.required && !customResponses[f.label]);
+    const missingRequired = (activeCampaign.fields as any)?.filter((f: any) => f.required && !customResponses[f.label]);
     if (missingRequired?.length > 0) {
       toast({
         title: "Errore",
@@ -72,24 +98,35 @@ const Predictions = () => {
       return;
     }
     
-    const predictions = JSON.parse(localStorage.getItem("tournament_predictions") || "[]");
-    predictions.push({
-      username: formData.username,
-      twitchId: formData.twitchId,
-      tournament: activeCampaign.tournamentName,
-      responses: customResponses,
-      timestamp: new Date().toISOString()
-    });
-    localStorage.setItem("tournament_predictions", JSON.stringify(predictions));
-    setTotalPredictions(predictions.length);
+    try {
+      const { error } = await supabase
+        .from('predictions')
+        .insert([{
+          campaign_id: activeCampaign.id,
+          username: formData.username,
+          twitch_id: formData.twitchId,
+          responses: customResponses
+        }]);
+      
+      if (error) throw error;
+      
+      await loadTotalPredictions();
+      
+      toast({
+        title: "Prediction Inviata! 🎉",
+        description: "Le tue previsioni sono state registrate. Buona fortuna!",
+      });
 
-    toast({
-      title: "Prediction Inviata! 🎉",
-      description: "Le tue previsioni sono state registrate. Buona fortuna!",
-    });
-
-    setFormData({ username: "", twitchId: "" });
-    setCustomResponses({});
+      setFormData({ username: "", twitchId: "" });
+      setCustomResponses({});
+    } catch (error: any) {
+      console.error('Error submitting prediction:', error);
+      toast({
+        title: "Errore",
+        description: "Errore nell'invio della prediction",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleChange = (field: string, value: string) => {
